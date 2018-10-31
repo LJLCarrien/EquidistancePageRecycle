@@ -165,6 +165,8 @@ public class EquidistancePageRecycle
     {
         if (IsSvNull()) return;
         mPanel = mScrollView.panel;
+        var sizey = mPanel.baseClipRegion.w;
+        mPanel.baseClipRegion = new Vector4(0, 0, cellSize * pageColumnLimit, sizey);
         Vector3 center = mScrollView.transform.position;
         Vector3 boundSize = mPanel.GetViewSize();
         mPanelBounds = new Bounds(center, boundSize);

@@ -13,7 +13,7 @@ public class ViewController : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        mEquidistanceRecycle = new EquidistancePageRecycle(mScrollView, maxNum, 60, 3, LoadCell, UpdateCell);
+        mEquidistanceRecycle = new EquidistancePageRecycle(mScrollView, maxNum, 60, 4, LoadCell, UpdateCell);
         cellCtrlerDic = new Dictionary<GameObject, CellController>(mEquidistanceRecycle.PanelMaxShowCount);
         mEquidistanceRecycle.UpdateCell();
     }

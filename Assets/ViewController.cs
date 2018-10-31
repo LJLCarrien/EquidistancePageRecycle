@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class ViewController : MonoBehaviour
 {
-    private int maxNum = 30;
+    private int maxNum = 19;
     public UIScrollView mScrollView;
 
     private EquidistancePageRecycle mEquidistanceRecycle;
@@ -32,8 +32,9 @@ public class ViewController : MonoBehaviour
             ctrler.UpdateLbl(dataindex.ToString());
 
         }
-
+        //ctrler.UpdateColor((dataindex / mEquidistanceRecycle.pageDataTotalCount)%2 == 0 ? Color.black : Color.red);
     }
+
 
 
     private Dictionary<GameObject, CellController> cellCtrlerDic;
@@ -43,5 +44,22 @@ public class ViewController : MonoBehaviour
         var ctrler = new CellController(mCell);
         cellCtrlerDic.Add(mCell, ctrler);
         return ctrler.GameObject;
+    }
+
+    public int page;
+    public int row;
+    public int line;
+    [ContextMenu("GetCellIndex1")]
+    private void GetCellIndex1()
+    {
+        var cellIndex = mEquidistanceRecycle.GetCellIndex(row, line);
+        Debug.LogError(cellIndex);
+    }
+
+    [ContextMenu("GetCellIndex2")]
+    private void GetCellIndex2()
+    {
+        var cellIndex = mEquidistanceRecycle.GetCellIndex(page, row, line);
+        Debug.LogError(cellIndex);
     }
 }

@@ -9,22 +9,132 @@ public class EquidistancePageRecycle
     private int cellSize;
     private float halfCellSize;
 
+    #region 分页数据
+
     /// <summary>
-    /// 每页行列数(水平为列，垂直为行)
+    /// 每页数据行列数(水平为列，垂直为行)
     /// </summary>
     private int pageColumnLimit;
+
     /// <summary>
     /// 每页数据总个数
     /// </summary>
-    private int pageDataTotalCount;
+    public int pageDataTotalCount { get; private set; }
+    /// <summary>
+    /// 总页数
+    /// </summary>
+    public int pageTotalNum
+    {
+        get
+        {
+            var count = 0;
+            if (mMovement == UIScrollView.Movement.Horizontal)
+            {
+                var pageIndex = DataCount / pageDataTotalCount;
+                count = DataCount % pageDataTotalCount != 0 ? pageIndex + 1 : pageIndex;
+            }
+            else if (mMovement == UIScrollView.Movement.Vertical)
+            {
+                //todo:
+            }
+            return count;
+        }
+    }
+    /// <summary>
+    /// 翻页的总列数
+    /// </summary>
+    public int pageTotalColumn
+    {
+        get
+        {
+            var count = 0;
+            if (mMovement == UIScrollView.Movement.Horizontal)
+            {
+                count = pageTotalNum * pageDataTotalCount / mPanelInitRowLimit;
+            }
+            else if (mMovement == UIScrollView.Movement.Vertical)
+            {
+                //todo:
+            }
+            return count;
+        }
+    }
+
+    #endregion
+
+    #region 界面显示
+
+    /// <summary>
+    //界面容许完全显示的最大列
+    /// </summary>
+    private int mPanelColumnLimit;
+
+    /// <summary>
+    //界面容许完全显示的最大行
+    /// </summary>
+    private int mPanelRowLimit;
+
+    /// <summary>
+    //界面容许显示的最大数量
+    /// </summary>
+    public int PanelMaxShowCount { get; private set; }
+
+    /// <summary>
+    /// 界面显示时，需要额外增加行数/列数（用于移动）
+    /// </summary>
+    private int extraShowNum;
+
+    /// <summary>
+    /// 界面最后生成的总列数
+    /// </summary>
+    private int mPanelInitColumnLimit
+    {
+        get
+        {
+            var count = mPanelColumnLimit;
+            if (mMovement == UIScrollView.Movement.Horizontal)
+            {
+                count = mPanelColumnLimit + extraShowNum;
+            }
+            else if (mMovement == UIScrollView.Movement.Vertical)
+            {
+                //todo:
+            }
+            return count;
+        }
+    }
+
+    /// <summary>
+    ///  界面最后生成的总行数
+    /// </summary>
+    private int mPanelInitRowLimit
+    {
+        get
+        {
+            var count = mPanelColumnLimit;
+            if (mMovement == UIScrollView.Movement.Horizontal)
+            {
+                count = mPanelRowLimit;
+            }
+            else if (mMovement == UIScrollView.Movement.Vertical)
+            {
+                //todo:
+            }
+            return count;
+        }
+    }
+
+    #endregion
+
+    #region 数据
+
     /// <summary>
     /// 数据总数
     /// </summary>
     private int DataCount;
-    /// <summary>
-    /// 数据可填充的最大列数
-    /// </summary>
-    private int dataColumnLImit;
+
+    #endregion
+
 
     private UIScrollView mScrollView;
     private UIPanel mPanel;
@@ -65,11 +175,16 @@ public class EquidistancePageRecycle
 
         cellParent = NGUITools.AddChild(mScrollView.gameObject);
         cellParent.name = "EquidistancePageRecycle";
+
+        cellPool = NGUITools.AddChild(mScrollView.gameObject);
+        cellPool.name = "EquidistancePagePool";
+        cellPool.gameObject.SetActive(false);
+
         InitPanelColRow();
 
-       
-}
-    
+
+    }
+
 
 
     #region  辅助
@@ -214,27 +329,12 @@ public class EquidistancePageRecycle
 
     #endregion
 
-    /// <summary>
-    //界面容许完全显示的最大列
-    /// </summary>
-    private int mPanelColumnLimit;
-    /// <summary>
-    //界面容许完全显示的最大行
-    /// </summary>
-    private int mPanelRowLimit;
 
     /// <summary>
-    //界面容许显示的最大数量
+    /// 生成的所有cell
     /// </summary>
-    public int PanelMaxShowCount { get; private set; }
-
-    /// <summary>
-    /// 界面显示时，需要额外增加的行数/列数
-    /// </summary>
-    private int extraShowNum;
-
     private List<GameObject> cellGoList;
-    private Dictionary<GameObject, CellDataInfo> cellDataDic;
+
 
     /// <summary>
     /// 初始化显示行列数
@@ -281,18 +381,25 @@ public class EquidistancePageRecycle
         {
             //todo:
         }
-        PanelMaxShowCount = mPanelColumnLimit * mPanelRowLimit;
+        PanelMaxShowCount = mPanelRowLimit * mPanelColumnLimit;
         pageDataTotalCount = mPanelRowLimit * pageColumnLimit;
 
         cellGoList = new List<GameObject>(PanelMaxShowCount);
-        cellDataDic = new Dictionary<GameObject, CellDataInfo>(PanelMaxShowCount);
 
-        dataColumnLImit = DataCount / mPanelRowLimit + DataCount % mPanelRowLimit;
+
         //Debug.LogError("-----------Result-----------");
         //Debug.LogError(mPanelColumnLimit);
         //Debug.LogError(mPanelRowLimit);
+        DebugLogAllInfo();
     }
 
+    private void DebugLogAllInfo()
+    {
+        var info = string.Format("界面完全显示行：{0}\n,界面完全显示列：{1}\n,界面完全显示总数：{2}\n\n", mPanelRowLimit, mPanelColumnLimit, PanelMaxShowCount);
+        var info1 = string.Format("实际生成行总数：{0}\n,实际生成列总数：{1}\n,实际生成总数：{2}\n\n", mPanelInitRowLimit, mPanelInitColumnLimit, mPanelInitRowLimit * mPanelInitColumnLimit);
+        var info2 = string.Format("数据总数：{0}\n,数据每页显示列数：{1}\n,翻页总页数：{2}\n,翻页总列数：{3}\n", DataCount, pageColumnLimit, pageTotalNum, pageTotalColumn);
+        Debug.LogError(info + info1 + info2);
+    }
     public void UpdateCell()
     {
         float cellX, cellY;
@@ -301,6 +408,8 @@ public class EquidistancePageRecycle
         int rowLimit = mMovement == UIScrollView.Movement.Vertical ? mPanelRowLimit + extraShowNum : mPanelRowLimit;
         int lineLimit = mMovement == UIScrollView.Movement.Horizontal ? mPanelColumnLimit + extraShowNum : mPanelColumnLimit;
         int cellIndex, dataIndex = 0;
+
+        curPageIndex = (int)mPanel.clipOffset.x / pageColumnLimit * cellSize;
         for (int curHang = 0; curHang < rowLimit; curHang++)
         {
             for (int curLine = 0; curLine < lineLimit; curLine++)
@@ -317,40 +426,66 @@ public class EquidistancePageRecycle
                 tf.localScale = Vector3.one;
                 tf.localPosition = new Vector3(cellX, cellY, 0);
                 //Debug.LogError(string.Format("{0},{1}", cellX, cellY));
-                cellIndex = curHang * lineLimit + curLine;
 
-                if (curLine < mPanelColumnLimit)
-                {
-                    //dataIndex = curHang * pageColumnLimit + (curLine / pageColumnLimit) * pageDataTotalCount + curLine % pageColumnLimit;
-                    dataIndex = GetDataIndex(curPageIndex, curHang, curLine);
-                }
-                else
-                {
-                    dataIndex = -1;
-                }
-                //CellDataInfo cellInfo = new CellDataInfo(cellIndex, dataIndex);
-                //cellDataDic.Add(go, cellInfo);
-                onUpdateItem(go, dataIndex);
+                //todo:
+                //onUpdateItem(go, dataIndex);
+
             }
         }
     }
-
-    private int GetDataIndex(int page, int row, int line)
+    #region 帮助
+    /// <summary>
+    /// 输入翻页的行列下标，获取cellIndex
+    ///  0,1,2,3,4,5,...pageTotalColumn-1
+    ///  1*pageTotalColumn....
+    ///  2*pageTotalColumn....
+    ///  (row-1)*pageTotalColumn....
+    /// </summary>
+    /// <param name="rowIndex">【0,mPanelInitRowLimit-1】</param>
+    /// <param name="cellPageLineIndex">【0，pageTotalColumn-1】</param>
+    /// <returns></returns>
+    public int GetCellIndex(int rowIndex, int cellPageLineIndex)
     {
-        var dIndex = page * mPanelRowLimit * pageColumnLimit + row * pageColumnLimit + line;
+        //括号：index取余保证不出界
+        var dIndex = (rowIndex % mPanelInitColumnLimit) * pageTotalColumn + (cellPageLineIndex % pageTotalColumn);
         return dIndex;
     }
+
+
+
+    /// <summary>
+    /// 数据当前页，当前页内的行列数
+    /// </summary>
+    /// <param name="pageIndex">【0,pageDataTotalCount-1】</param>
+    /// <param name="rowIndex">【0，mPanelInitRowLimit-1】</param>
+    /// <param name="cellEachPagelLineIndex">【0，pageColumnLimit-1】</param>
+    /// <returns></returns>
+    public int GetCellIndex(int pageIndex, int rowIndex, int cellEachPagelLineIndex)
+    {
+        //括号：index取余保证不出界
+        if (pageIndex >= pageDataTotalCount)
+        {
+            Debug.LogError("【页数】下标超过可翻最大页数，取余处理");
+        }
+        if (rowIndex >= mPanelInitRowLimit)
+        {
+            Debug.LogError("【行数】下标超过界面生成的最大行数，取余处理");
+        }
+        if (cellEachPagelLineIndex >= pageColumnLimit)
+        {
+            Debug.LogError("【列数】下标超过当前页最大列数，取余处理");
+        }
+        var dIndex = (pageIndex % pageTotalNum) * pageColumnLimit + (rowIndex % mPanelInitRowLimit) * pageTotalColumn + (cellEachPagelLineIndex % pageColumnLimit);
+        return dIndex;
+    }
+    #endregion
     /// <summary>
     /// 界面显示的cell首列下标
     /// </summary>
     private int curFirstColIndex = 0;
     private int curLastColIndex = 0;
 
-    /// <summary>
-    /// 数据cell 首列下标
-    /// </summary>
-    private int curDataFirstColIndex = 0;
-    private int curDataLastColIndex = 0;
+
     private enum DragmoveDir
     {
         None,
@@ -360,25 +495,14 @@ public class EquidistancePageRecycle
         Down
     }
 
-    private class CellDataInfo
-    {
-        public int cellIndex;
-        public int dataIndex;
-
-        public CellDataInfo(int cindex, int dIndex)
-        {
-            cellIndex = cindex;
-            dataIndex = dIndex;
-        }
-    }
-
-
     private DragmoveDir GetDragmoveDir()
     {
         var dragDir = mPanel.clipOffset.x - panelStartOffset > 0 ? DragmoveDir.Left :
             mPanel.clipOffset.x - panelStartOffset < 0 ? DragmoveDir.Right : DragmoveDir.None;
         return dragDir;
     }
+
+    private int willShowPage;
     /// <summary>
     /// 检测并移动
     /// </summary>
@@ -411,14 +535,16 @@ public class EquidistancePageRecycle
 
             #endregion
 
-            #region cell数据index计算
-
-            curDataFirstColIndex = curDataFirstColIndex % dataColumnLImit;
-            curDataLastColIndex = (curDataFirstColIndex + dataColumnLImit - 1) % dataColumnLImit;
-            //Debug.LogError(string.Format("{0},{1}", curDataFirstColIndex, curDataLastColIndex));
 
 
-            #endregion
+            var offsetDistance = Mathf.Abs((int)(mPanel.clipOffset.x - panelStartOffset));
+            var goToNextPageDistance = pageColumnLimit * cellSize;
+            var pageNum = (offsetDistance / goToNextPageDistance) + 1;
+            if (mScrollView.isDragging)
+            {
+                willShowPage = curPageIndex + moveDir * pageNum;
+                //Debug.LogError(willShowPage);
+            }
             if (IsAllOutHoriPanel(cellX))
             {
                 for (int hangIndex = 0; hangIndex < rowLimit; hangIndex++)
@@ -427,12 +553,9 @@ public class EquidistancePageRecycle
                     cellGo = cellGoList[cellIndex];
                     cellX = cellGo.transform.localPosition.x + moveDir * lineLimit * cellSize;
 
-                    //dataIndex = cellDataDic[cellGo].dataIndex + (moveDir * rowLimit * mPanelColumnLimit) + 1;
-                    //Debug.LogError(string.Format("{0}，{1}", cellDataDic[cellGo].dataIndex, dataIndex));
-                    //if (dragDir == DragmoveDir.Left && curDataFirstColIndex + moveDir * mPanelColumnLimit >= dataColumnLImit - 1) return;//滑动限制todo
-                    //if (dragDir == DragmoveDir.Right && curDataFirstColIndex - 1 < 0) return;//滑动限制todo
+                    //dataIndex = GetDataIndex(willShowPage, hangIndex, );
                     //onUpdateItem(cellGo, dataIndex);
-                    //cellDataDic[cellGo].dataIndex = dataIndex;
+
 
                     cellGo.transform.SetLocalX(cellX);
 
@@ -440,16 +563,12 @@ public class EquidistancePageRecycle
 
                 if (dragDir == DragmoveDir.Left)
                 {
-                    curDataFirstColIndex++;
                     curFirstColIndex++;
                 }
                 else if (dragDir == DragmoveDir.Right)
                 {
                     curFirstColIndex = curLastColIndex;
-                    curDataFirstColIndex = curDataLastColIndex;
-                    //curDataFirstColIndex = curDataLastColIndex;
                 }
-                //Debug.LogError(string.Format("{0},{1}", curDataFirstColIndex, curDataLastColIndex));
             }
         }
         if (mMovement == UIScrollView.Movement.Vertical)
@@ -469,18 +588,30 @@ public class EquidistancePageRecycle
         {
             mScrollView.onStoppedMoving += OnStoppedMoving;
             mScrollView.onDragStarted += OnDragStarted;
+            mScrollView.onMomentumMove += onMomentumMove;
             mScrollView.onDragFinished += OnDragFinished;
             //    mScrollView.onScrollWheel += OnScrollWheel;
             //}
         }
     }
-    
+
+    private void onMomentumMove()
+    {
+        DebugIsDraging();
+        //Debug.LogError("onMomentumMove");
+    }
+
+    private void DebugIsDraging()
+    {
+        //Debug.LogError(mScrollView.isDragging);
+    }
     private void OnDragFinished()
     {
-        //panelStartOffset = mMovement == UIScrollView.Movement.Horizontal ? mPanel.clipOffset.x : mPanel.clipOffset.y;
+        //Debug.LogError("OnDragFinished");
 
+        //panelStartOffset = mMovement == UIScrollView.Movement.Horizontal ? mPanel.clipOffset.x : mPanel.clipOffset.y;
     }
-    
+
     private void OnDragStarted()
     {
 
@@ -489,25 +620,40 @@ public class EquidistancePageRecycle
 
     private int curPageIndex = 0;
     private float curMoveTo = 0;
+    private int minDragMoveDistance = 0;
     private void OnStoppedMoving()
     {
+        //Debug.LogError("OnStoppedMoving");
+
         var isChange = 0;
         //Debug.LogError(curPageIndex * pageColumnLimit + (pageColumnLimit - 1));
         var dragDir = GetDragmoveDir();
         var moveDir = dragDir == DragmoveDir.Left ? 1 : dragDir == DragmoveDir.Right ? -1 : 0;
+        //Debug.LogError(moveDir);
+        var pageNum = 0;
+        var goToNextPageDistance = pageColumnLimit * cellSize;
+        var offsetDistance = Mathf.Abs((int)(mPanel.clipOffset.x - panelStartOffset));
+        //Debug.LogError(offsetDistance);
+        if (mMovement == UIScrollView.Movement.Horizontal /*&& offsetDistance >= minDragMoveDistance*/)
+        {
+            pageNum = (offsetDistance / goToNextPageDistance) + 1;
+            pageNum = offsetDistance >= goToNextPageDistance + goToNextPageDistance / 2 ? pageNum - 1 : pageNum;
+
+        }
+
 
         if (dragDir == DragmoveDir.Left/* && curPageIndex * pageColumnLimit + (pageColumnLimit - 1) < dataColumnLImit - 1*/)
         {
-            curPageIndex++;
+            curPageIndex += pageNum;
             isChange = 1;
         }
-        if (dragDir == DragmoveDir.Right /*&& curPageIndex > 1*/)
+        if (dragDir == DragmoveDir.Right && curPageIndex > 0)
         {
-            curPageIndex--;
+            curPageIndex -= pageNum;
             isChange = 1;
         }
         float finalmoveTo;
-        finalmoveTo = curMoveTo - isChange * moveDir * pageColumnLimit * cellSize;
+        finalmoveTo = curMoveTo - pageNum * isChange * moveDir * pageColumnLimit * cellSize;
         curMoveTo = finalmoveTo;
         SpringPanel.Begin(mPanel.gameObject, new Vector3(finalmoveTo, 0, 0), 8f);
 
@@ -518,6 +664,8 @@ public class EquidistancePageRecycle
 
     private void OnClipMove(UIPanel panel)
     {
+
+
         CheckCellMove();
     }
 

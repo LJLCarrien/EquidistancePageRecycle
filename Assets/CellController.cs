@@ -43,4 +43,9 @@ public class CellController
 
         label.text = text;
     }
+
+    public void UpdateColor(Color color)
+    {
+        sprite.color = color;
+    }
 }

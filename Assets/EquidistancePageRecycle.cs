@@ -186,6 +186,10 @@ public class EquidistancePageRecycle
 
 
     }
+    void OnDestory()
+    {
+        RemoveEvent();
+    }
 
 
 
@@ -496,13 +500,7 @@ public class EquidistancePageRecycle
         Top,
         Down
     }
-
-    private DragmoveDir GetDragmoveDir()
-    {
-        var dragDir = mPanel.clipOffset.x - panelStartOffset > 0 ? DragmoveDir.Left :
-            mPanel.clipOffset.x - panelStartOffset < 0 ? DragmoveDir.Right : DragmoveDir.None;
-        return dragDir;
-    }
+    //todo:左移一下，右移两下 240，200 3行4列
 
     private int willShowPage;
     /// <summary>
@@ -513,9 +511,10 @@ public class EquidistancePageRecycle
         int rowLimit = mMovement == UIScrollView.Movement.Vertical ? mPanelRowLimit + extraShowNum : mPanelRowLimit;
         int lineLimit = mMovement == UIScrollView.Movement.Horizontal ? mPanelColumnLimit + extraShowNum : mPanelColumnLimit;
         if (cellGoList.Count <= lineLimit) return;
-        int cellIndex = 0, moveColIndex, dataIndex;
+        int cellIndex = 0, moveColIndex, dataIndex, intMoveDir;
         float cellX = 0;
         GameObject cellGo;
+        DragmoveDir moveDir;
         if (mMovement == UIScrollView.Movement.Horizontal)
         {
 
@@ -523,13 +522,31 @@ public class EquidistancePageRecycle
 
             curFirstColIndex = curFirstColIndex % lineLimit;
             curLastColIndex = (curFirstColIndex + lineLimit - 1) % lineLimit;
+            //Debug.LogError(string.Format("{0},{1}", curFirstColIndex, curLastColIndex));
+            bool moveLeft, moveRight;
+            if (mScrollView.isDragging)
+            {
+                moveLeft = mScrollView.currentMomentum.x < 0;
+                moveRight = mScrollView.currentMomentum.x > 0;
+                //sv移动方向
+                intMoveDir = moveLeft ? 1 : moveRight ? -1 : 0;
+                //当前拖动方向
+                moveDir = moveLeft ? DragmoveDir.Left : moveRight ? DragmoveDir.Right : DragmoveDir.None;
+            }
+            else
+            {
+                intMoveDir = intFinishedSvMoveDir;
+                moveDir = mFinisedSvMoveDir;
+            }
+            
 
-            var dragDir = GetDragmoveDir();
-            var moveDir = dragDir == DragmoveDir.Left ? 1 : dragDir == DragmoveDir.Right ? -1 : 0;
+         
 
-            if (dragDir == DragmoveDir.None) return;
+            //Debug.LogError(dragDir);
+
+            if (moveDir == DragmoveDir.None) return;
             //需要移动的列index
-            moveColIndex = dragDir == DragmoveDir.Left ? curFirstColIndex : dragDir == DragmoveDir.Right ? curLastColIndex : -1;
+            moveColIndex = moveDir == DragmoveDir.Left ? curFirstColIndex : moveDir == DragmoveDir.Right ? curLastColIndex : -1;
 
             //左拖动 offset变大 cell右移 x增加
             cellX = cellGoList[moveColIndex].transform.localPosition.x;
@@ -544,7 +561,7 @@ public class EquidistancePageRecycle
             var pageNum = (offsetDistance / goToNextPageDistance) + 1;
             if (mScrollView.isDragging)
             {
-                willShowPage = curPageIndex + moveDir * pageNum;
+                willShowPage = curPageIndex + intMoveDir * pageNum;
                 //Debug.LogError(willShowPage);
             }
             if (IsAllOutHoriPanel(cellX))
@@ -553,7 +570,7 @@ public class EquidistancePageRecycle
                 {
                     cellIndex = hangIndex * lineLimit + moveColIndex;
                     cellGo = cellGoList[cellIndex];
-                    cellX = cellGo.transform.localPosition.x + moveDir * lineLimit * cellSize;
+                    cellX = cellGo.transform.localPosition.x + intMoveDir * lineLimit * cellSize;
 
                     //dataIndex = GetDataIndex(willShowPage, hangIndex, );
                     //onUpdateItem(cellGo, dataIndex);
@@ -563,11 +580,11 @@ public class EquidistancePageRecycle
 
                 }
 
-                if (dragDir == DragmoveDir.Left)
+                if (moveDir == DragmoveDir.Left)
                 {
                     curFirstColIndex++;
                 }
-                else if (dragDir == DragmoveDir.Right)
+                else if (moveDir == DragmoveDir.Right)
                 {
                     curFirstColIndex = curLastColIndex;
                 }
@@ -596,41 +613,42 @@ public class EquidistancePageRecycle
             //}
         }
     }
-
+    private void RemoveEvent()
+    {
+        if (mPanel != null) mPanel.onClipMove -= OnClipMove;
+        if (mScrollView != null)
+        {
+            mScrollView.onStoppedMoving -= OnStoppedMoving;
+            mScrollView.onDragStarted -= OnDragStarted;
+            mScrollView.onMomentumMove -= onMomentumMove;
+            mScrollView.onDragFinished -= OnDragFinished;
+            //    mScrollView.onScrollWheel -= OnScrollWheel;
+            //}
+        }
+    }
     private void onMomentumMove()
     {
-        DebugIsDraging();
-        //Debug.LogError("onMomentumMove");
+        //DebugIsDraging();
     }
 
     private void DebugIsDraging()
     {
         //Debug.LogError(mScrollView.isDragging);
     }
+
+    private DragmoveDir mFinisedSvMoveDir = DragmoveDir.None;
+    private int intFinishedSvMoveDir = 0;
     private void OnDragFinished()
-    {
-        //Debug.LogError("OnDragFinished");
-
-        //panelStartOffset = mMovement == UIScrollView.Movement.Horizontal ? mPanel.clipOffset.x : mPanel.clipOffset.y;
-    }
-
-    private void OnDragStarted()
-    {
-
-        panelStartOffset = mMovement == UIScrollView.Movement.Horizontal ? mPanel.clipOffset.x : mPanel.clipOffset.y;
-    }
-
-    private int curPageIndex = 0;
-    private float curMoveTo = 0;
-    private int minDragMoveDistance = 0;
-    private void OnStoppedMoving()
     {
         //Debug.LogError("OnStoppedMoving");
 
         var isChange = 0;
+
         //Debug.LogError(curPageIndex * pageColumnLimit + (pageColumnLimit - 1));
-        var dragDir = GetDragmoveDir();
-        var moveDir = dragDir == DragmoveDir.Left ? 1 : dragDir == DragmoveDir.Right ? -1 : 0;
+        mFinisedSvMoveDir = mPanel.clipOffset.x - panelStartOffset > 0 ? DragmoveDir.Left :
+           mPanel.clipOffset.x - panelStartOffset < 0 ? DragmoveDir.Right : DragmoveDir.None;
+
+        intFinishedSvMoveDir = mFinisedSvMoveDir == DragmoveDir.Left ? 1 : mFinisedSvMoveDir == DragmoveDir.Right ? -1 : 0;
         //Debug.LogError(moveDir);
         var pageNum = 0;
         var goToNextPageDistance = pageColumnLimit * cellSize;
@@ -644,22 +662,36 @@ public class EquidistancePageRecycle
         }
 
 
-        if (dragDir == DragmoveDir.Left/* && curPageIndex * pageColumnLimit + (pageColumnLimit - 1) < dataColumnLImit - 1*/)
+        if (mFinisedSvMoveDir == DragmoveDir.Left/* && curPageIndex * pageColumnLimit + (pageColumnLimit - 1) < dataColumnLImit - 1*/)
         {
             curPageIndex += pageNum;
             isChange = 1;
         }
-        if (dragDir == DragmoveDir.Right && curPageIndex > 0)
+        if (mFinisedSvMoveDir == DragmoveDir.Right && curPageIndex > 0)
         {
             curPageIndex -= pageNum;
             isChange = 1;
         }
         float finalmoveTo;
-        finalmoveTo = curMoveTo - pageNum * isChange * moveDir * pageColumnLimit * cellSize;
+        finalmoveTo = curMoveTo - pageNum * isChange * intFinishedSvMoveDir * pageColumnLimit * cellSize;
         curMoveTo = finalmoveTo;
         SpringPanel.Begin(mPanel.gameObject, new Vector3(finalmoveTo, 0, 0), 8f);
 
         CheckCellMove();
+    }
+
+    private void OnDragStarted()
+    {
+
+        panelStartOffset = mMovement == UIScrollView.Movement.Horizontal ? mPanel.clipOffset.x : mPanel.clipOffset.y;
+    }
+
+    private int curPageIndex = 0;
+    private float curMoveTo = 0;
+    private int minDragMoveDistance = 0;
+    private void OnStoppedMoving()
+    {
+
 
 
     }

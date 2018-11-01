@@ -6,8 +6,17 @@ using System.Collections.Generic;
 
 public class EquidistancePageRecycle
 {
+    #region 数据们
+
+    /// <summary>
+    /// 已包含间隔
+    /// </summary>
     private int cellSize;
     private float halfCellSize;
+    /// <summary>
+    /// 数据总数
+    /// </summary>
+    private int DataCount;
 
     #region 分页数据
 
@@ -143,15 +152,15 @@ public class EquidistancePageRecycle
 
     #endregion
 
-    #region 数据
+    #region 委托
 
-    /// <summary>
-    /// 数据总数
-    /// </summary>
-    private int DataCount;
+    public delegate GameObject OnLoadItem();
+    public delegate void OnUpdateItem(GameObject go, int dataIndex);
+
+    private OnLoadItem onLoadItem;
+    private OnUpdateItem onUpdateItem;
 
     #endregion
-
 
     private UIScrollView mScrollView;
     private UIPanel mPanel;
@@ -160,6 +169,7 @@ public class EquidistancePageRecycle
     private GameObject cellParent;
     private GameObject cellPool;
     private Bounds mPanelBounds;
+    #endregion
 
     public EquidistancePageRecycle(UIScrollView sv, int dataCount, int size, int pageColum,
         OnLoadItem loadItem, OnUpdateItem updateItem, int extraShownum = 1)
@@ -219,7 +229,6 @@ public class EquidistancePageRecycle
 
         if (mMovement == UIScrollView.Movement.Horizontal)
         {
-            //Debug.LogError("-----------X-----------");
             cellX = PanelCellLeft;
             while (IsAllInHoriPanel(cellX))
             {
@@ -230,10 +239,7 @@ public class EquidistancePageRecycle
                     mPanelColumnLimit = curLie;
                 }
                 cellX = PanelCellLeft + curLie * cellSize;
-                //Debug.LogError(cellX);
             }
-            //Debug.LogError("-----------Y-----------");
-
             cellY = PanelCellTop;
             while (IsAllInVerPanel(cellY))
             {
@@ -244,7 +250,6 @@ public class EquidistancePageRecycle
                     mPanelRowLimit = curHang;
                 }
                 cellY = PanelCellTop - curHang * cellSize;
-                //Debug.LogError(cellY);
             }
         }
         if (mMovement == UIScrollView.Movement.Vertical)
@@ -256,10 +261,6 @@ public class EquidistancePageRecycle
 
         cellGoList = new List<GameObject>(PanelMaxShowCount);
 
-
-        //Debug.LogError("-----------Result-----------");
-        //Debug.LogError(mPanelColumnLimit);
-        //Debug.LogError(mPanelRowLimit);
         DebugLogAllInfo();
     }
 
@@ -303,7 +304,7 @@ public class EquidistancePageRecycle
             }
         }
     }
- 
+
 
 
 
@@ -439,19 +440,11 @@ public class EquidistancePageRecycle
     }
     #endregion
 
-    #region 委托
-
-    public delegate GameObject OnLoadItem();
-    public delegate void OnUpdateItem(GameObject go, int dataIndex);
-
-    private OnLoadItem onLoadItem;
-    private OnUpdateItem onUpdateItem;
-
-    #endregion
 
 
 
-  
+
+
     #region 帮助
     /// <summary>
     /// 输入翻页的行列下标，获取cellIndex
@@ -611,11 +604,6 @@ public class EquidistancePageRecycle
     /// 当前panel移动到的位置（水平:x）
     /// </summary>
     private float curMoveTo = 0;
-    /// <summary>
-    /// 触发sv翻页的最短距离
-    /// </summary>
-    private int minDragMoveDistance = 0;
-
 
     /// <summary>
     /// 拖动结束时，不管往哪边拖动，最后sv真正移动的方向
@@ -630,6 +618,16 @@ public class EquidistancePageRecycle
     private DragmoveDir mFinisedSvDragDir = DragmoveDir.None;
     private int intFinishedSvDragDir = 0;
 
+    #endregion
+    #region 拖动限制
+    /// <summary>
+    /// 触发sv翻页的最短距离
+    /// </summary>
+    private int minDragMoveDistance = 0;
+    /// <summary>
+    /// 是否首尾限制（即首页再往左不能翻到末页，末页往右不能翻到左）
+    /// </summary>
+    private bool IsNeedFirstLastLimit = true;
     #endregion
     private void RegisterEvent()
     {

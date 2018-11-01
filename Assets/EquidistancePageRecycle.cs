@@ -172,7 +172,7 @@ public class EquidistancePageRecycle
     #endregion
 
     public EquidistancePageRecycle(UIScrollView sv, int dataCount, int size, int pageColum,
-        OnLoadItem loadItem, OnUpdateItem updateItem, int extraShownum = 1)
+        OnLoadItem loadItem, OnUpdateItem updateItem, int extraShownum = 1, int minDragCanMoveDistance = 0)
     {
         mScrollView = sv;
         DataCount = dataCount;
@@ -180,11 +180,12 @@ public class EquidistancePageRecycle
         halfCellSize = (float)cellSize / 2;
 
         pageColumnLimit = pageColum;
-
         onLoadItem = loadItem;
         onUpdateItem = updateItem;
 
         extraShowNum = extraShownum;
+        minDragMoveDistance = minDragCanMoveDistance;
+
         InitNeed();
     }
     void OnDestory()
@@ -540,6 +541,7 @@ public class EquidistancePageRecycle
                 //移动方向根据spring要之后要移动到的位置与当前位置计算
                 intMoveDir = intFinishedSvMoveDir;
                 moveDir = mFinisedSvMoveDir;
+                //Debug.LogError("移动方向" + intMoveDir);
             }
 
             if (moveDir == DragmoveDir.None) return;
@@ -588,6 +590,8 @@ public class EquidistancePageRecycle
                 {
                     curFirstColIndex = curLastColIndex;
                 }
+                //Debug.LogError(curFirstColIndex);
+
             }
         }
         if (mMovement == UIScrollView.Movement.Vertical)
@@ -600,6 +604,11 @@ public class EquidistancePageRecycle
     #region  事件
 
     #region 拖动数据变量
+    /// <summary>
+    /// 开始拖动时，panel的clipOffset（水平x 垂直y）
+    /// </summary>
+    private float panelStartOffset;
+
     /// <summary>
     /// 当前panel移动到的位置（水平:x）
     /// </summary>
@@ -653,7 +662,6 @@ public class EquidistancePageRecycle
             //    mScrollView.onScrollWheel -= OnScrollWheel;
         }
     }
-    private float panelStartOffset;
 
     private void OnDragStarted()
     {
@@ -664,8 +672,9 @@ public class EquidistancePageRecycle
 
     private void OnDragFinished()
     {
+        var dragOffset = mPanel.clipOffset.x - panelStartOffset;
         //拖动方向
-        mFinisedSvDragDir = mPanel.clipOffset.x - panelStartOffset > 0 ? DragmoveDir.Left : mPanel.clipOffset.x - panelStartOffset < 0 ? DragmoveDir.Right : DragmoveDir.None;
+        mFinisedSvDragDir = dragOffset > 0 ? DragmoveDir.Left : dragOffset < 0 ? DragmoveDir.Right : DragmoveDir.None;
         intFinishedSvDragDir = mFinisedSvDragDir == DragmoveDir.Left ? 1 : mFinisedSvDragDir == DragmoveDir.Right ? -1 : 0;
         //Debug.LogError("Drag:" + mFinisedSvDragDir);
 
@@ -678,15 +687,24 @@ public class EquidistancePageRecycle
             pageNum = offsetDistance >= goToNextPageDistance + goToNextPageDistance / 2 ? pageNum - 1 : pageNum;
         }
         var isChange = 0;
-        if (mFinisedSvDragDir == DragmoveDir.Left)
+        var dragDistance = Mathf.Abs(dragOffset);
+
+        if (dragDistance >= minDragMoveDistance)//拖动最小距离限制
         {
-            curPageIndex += pageNum;
-            isChange = 1;
+            if (mFinisedSvDragDir == DragmoveDir.Left)
+            {
+                curPageIndex += pageNum;
+                isChange = 1;
+            }
+            if (mFinisedSvDragDir == DragmoveDir.Right)
+            {
+                curPageIndex -= pageNum;
+                isChange = 1;
+            }
         }
-        if (mFinisedSvDragDir == DragmoveDir.Right)
+        else
         {
-            curPageIndex -= pageNum;
-            isChange = 1;
+            Debug.LogError(string.Format("拖动距离{0}太短，不足以翻页", dragDistance));
         }
 
         var finalmoveTo = curMoveTo - pageNum * isChange * intFinishedSvDragDir * pageColumnLimit * cellSize;
@@ -695,10 +713,11 @@ public class EquidistancePageRecycle
 
         //移动方向
         mFinisedSvMoveDir = mPanel.transform.localPosition.x - finalmoveTo > 0 ? DragmoveDir.Left : mPanel.transform.localPosition.x - finalmoveTo < 0 ? DragmoveDir.Right : DragmoveDir.None;
-        intFinishedSvMoveDir = mFinisedSvMoveDir == DragmoveDir.Left ? 1 : mFinisedSvDragDir == DragmoveDir.Right ? -1 : 0;
+        intFinishedSvMoveDir = mFinisedSvMoveDir == DragmoveDir.Left ? 1 : mFinisedSvMoveDir == DragmoveDir.Right ? -1 : 0;
         //Debug.LogError("Move:" + mFinisedSvMoveDir);
+        //Debug.LogError("Move int:" + intFinishedSvMoveDir);
 
-        CheckMove();
+        //CheckMove();
     }
 
 

@@ -15,7 +15,7 @@ public class ViewController : MonoBehaviour
     {
         mEquidistanceRecycle = new EquidistancePageRecycle(mScrollView, maxNum, 60, 4, LoadCell, UpdateCell);
         cellCtrlerDic = new Dictionary<GameObject, CellController>(mEquidistanceRecycle.PanelMaxShowCount);
-        mEquidistanceRecycle.UpdateCell();
+        mEquidistanceRecycle.InitCell();
     }
 
     private void UpdateCell(GameObject go, int dataindex)

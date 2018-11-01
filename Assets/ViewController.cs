@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 public class ViewController : MonoBehaviour
 {
-    private int maxNum = 19;
+    private int maxNum = 25;
     public UIScrollView mScrollView;
 
     private EquidistancePageRecycle mEquidistanceRecycle;
@@ -13,7 +13,7 @@ public class ViewController : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        mEquidistanceRecycle = new EquidistancePageRecycle(mScrollView, maxNum, 60, 4, LoadCell, UpdateCell);
+        mEquidistanceRecycle = new EquidistancePageRecycle(mScrollView, maxNum, 60, 3, LoadCell, UpdateCell);
         cellCtrlerDic = new Dictionary<GameObject, CellController>(mEquidistanceRecycle.PanelMaxShowCount);
         mEquidistanceRecycle.InitCell();
     }
@@ -62,4 +62,14 @@ public class ViewController : MonoBehaviour
         var cellIndex = mEquidistanceRecycle.GetCellIndex(page, row, line);
         Debug.LogError(cellIndex);
     }
+
+    public int realLineIndex;
+    public int pageTimes;
+    [ContextMenu("GetCellIndex3")]
+    private void GetCellIndex3()
+    {
+        var cellIndex = mEquidistanceRecycle.GetPageRealCellLineIndexByPageTimes(realLineIndex, pageTimes);
+        Debug.LogError(cellIndex);
+    }
+    
 }

@@ -21,7 +21,7 @@ public class EquidistancePageRecycle
     #region 分页数据
 
     private int curPageIndex = 0;
-    private int willShowPage;
+    private int willShowPageIndex;
 
     /// <summary>
     /// 每页数据行列数(水平为列，垂直为行)
@@ -76,11 +76,16 @@ public class EquidistancePageRecycle
 
     #region 界面显示
     /// <summary>
-    /// 界面显示的cell首列下标
+    /// 初始化时，界面生成的cell的最右的cell,在最后一页时的列下标【循环移动使用的列数据】
+    /// （注意：是生成的最右,不是可显示在panel的最右）当额外生成列数为0时，生成的最右=可显示的最右
+    /// </summary>
+    private int lastPageLastShowingColIndex = 0;
+    /// <summary>
+    /// 界面生成的cell，首列下标【循环移动使用的列数据】
     /// </summary>
     private int curFirstColIndex = 0;
     /// <summary>
-    /// 界面显示的cell末列下标
+    /// 界面生成的cell，末列下标【循环移动使用的列数据】
     /// </summary>
     private int curLastColIndex = 0;
 
@@ -172,7 +177,7 @@ public class EquidistancePageRecycle
     #endregion
 
     public EquidistancePageRecycle(UIScrollView sv, int dataCount, int size, int pageColum,
-        OnLoadItem loadItem, OnUpdateItem updateItem, int extraShownum = 1, int minDragCanMoveDistance = 0)
+        OnLoadItem loadItem, OnUpdateItem updateItem, bool isNeedFirstLastLimit = true, int extraShownum = 1, int minDragCanMoveDistance = 0)
     {
         mScrollView = sv;
         DataCount = dataCount;
@@ -183,6 +188,7 @@ public class EquidistancePageRecycle
         onLoadItem = loadItem;
         onUpdateItem = updateItem;
 
+        //IsNeedFirstLastLimit = isNeedFirstLastLimit;
         extraShowNum = extraShownum;
         minDragMoveDistance = minDragCanMoveDistance;
 
@@ -262,6 +268,9 @@ public class EquidistancePageRecycle
 
         cellGoList = new List<GameObject>(PanelMaxShowCount);
 
+        lastPageLastShowingColIndex = GetPageRealCellLineIndexByPageTimes(mPanelInitColumnLimit - 1, pageTotalNum - 1);
+        //Debug.LogError("最后页最后列的移动列数据：" + lastPageLastShowingColIndex);
+
         DebugLogAllInfo();
     }
 
@@ -270,7 +279,7 @@ public class EquidistancePageRecycle
         var info = string.Format("界面完全显示行：{0}\n,界面完全显示列：{1}\n,界面完全显示总数：{2}\n\n", mPanelRowLimit, mPanelColumnLimit, PanelMaxShowCount);
         var info1 = string.Format("实际生成行总数：{0}\n,实际生成列总数：{1}\n,实际生成总数：{2}\n\n", mPanelInitRowLimit, mPanelInitColumnLimit, mPanelInitRowLimit * mPanelInitColumnLimit);
         var info2 = string.Format("数据总数：{0}\n,数据每页显示列数：{1}\n,翻页总页数：{2}\n,翻页总列数：{3}\n", DataCount, pageColumnLimit, pageTotalNum, pageTotalColumn);
-        Debug.LogError(info + info1 + info2);
+        Extensions.LogAttentionTip(info + info1 + info2);
     }
     public void InitCell()
     {
@@ -299,11 +308,12 @@ public class EquidistancePageRecycle
                 tf.localPosition = new Vector3(cellX, cellY, 0);
                 //Debug.LogError(string.Format("{0},{1}", cellX, cellY));
 
-                //todo:
+                //按cell真实循环列下标显示
                 onUpdateItem(go, curLine);
 
             }
         }
+
     }
 
 
@@ -478,18 +488,44 @@ public class EquidistancePageRecycle
         //括号：index取余保证不出界
         if (pageIndex >= pageDataTotalCount)
         {
-            Debug.LogError("【页数】下标超过可翻最大页数，取余处理");
+            Extensions.LogAttentionTip("【页数】下标超过可翻最大页数，取余处理");
         }
         if (rowIndex >= mPanelInitRowLimit)
         {
-            Debug.LogError("【行数】下标超过界面生成的最大行数，取余处理");
+            Extensions.LogAttentionTip("【行数】下标超过界面生成的最大行数，取余处理");
         }
         if (cellEachPagelLineIndex >= pageColumnLimit)
         {
-            Debug.LogError("【列数】下标超过当前页最大列数，取余处理");
+            Extensions.LogAttentionTip("【列数】下标超过当前页最大列数，取余处理");
         }
         var dIndex = (pageIndex % pageTotalNum) * pageColumnLimit + (rowIndex % mPanelInitRowLimit) * pageTotalColumn + (cellEachPagelLineIndex % pageColumnLimit);
         return dIndex;
+    }
+
+    /// <summary>
+    /// 获取下pageTimes页对应【移动用】的真实下标
+    /// </summary>
+    public int GetPageRealCellLineIndexByPageTimes(int curPageRealCellLineIndex, int pageTimes)
+    {
+        var curLineIndex = curPageRealCellLineIndex;
+        for (int i = 0; i < pageTimes; i++)
+        {
+            curLineIndex = GetNextPageRealCellLineIndex(curLineIndex, pageColumnLimit, mPanelInitColumnLimit);
+        }
+        //Debug.LogError(string.Format("当前：{0}，下{1}页：{2}", curPageRealCellLineIndex, pageTimes, curLineIndex));
+        return curLineIndex;
+    }
+    /// <summary>
+    /// 获取下一页对应【移动用】的真实下标
+    /// </summary>
+    /// <param name="curPageRealCellLineIndex">当前所在页的cell真实列下标【0，mPanelInitColumnLimit-1】</param>
+    /// <param name="eachPageDataLineCount">每页显示数据的列数</param>
+    /// <param name="eachPageInitCellCount">每页生成的总列数</param>
+    /// <returns></returns>
+    private int GetNextPageRealCellLineIndex(int curPageRealCellLineIndex, int eachPageDataLineCount, int eachPageInitCellCount)
+    {
+        var nextPageRealCellLineIndex = (curPageRealCellLineIndex + eachPageDataLineCount) % eachPageInitCellCount;
+        return nextPageRealCellLineIndex;
     }
     #endregion
 
@@ -556,16 +592,39 @@ public class EquidistancePageRecycle
 
             #endregion
 
-
-
             var offsetDistance = Mathf.Abs((int)(mPanel.clipOffset.x - panelStartOffset));
             var goToNextPageDistance = pageColumnLimit * cellSize;
             var pageNum = (offsetDistance / goToNextPageDistance) + 1;
             if (mScrollView.isDragging)
             {
-                willShowPage = curPageIndex + intMoveDir * pageNum;
-                //Debug.LogError(willShowPage);
+                willShowPageIndex = curPageIndex + intMoveDir * pageNum;
+                //Debug.LogError(willShowPageIndex);
             }
+            //Debug.LogError(curPageIndex);
+            #region  限制3：首尾翻页预设循环限制
+            if (IsNeedFirstLastLimit && IsNeedFirstLastLimitRecycle)
+            {
+                if (willShowPageIndex < 0)
+                {
+                    Extensions.LogAttentionTip("首页右拖翻上一页，预设不循环");
+                    return;
+                }
+                if (willShowPageIndex > pageTotalNum - 1)
+                {
+                    Extensions.LogAttentionTip("尾页左拖翻下一页，预设不循环");
+                    return;
+                }
+                //以下两个return：用于处理首尾翻页限制，但还是会看到额外生成那一列的情况
+                if (willShowPageIndex == 0 && moveColIndex == mPanelInitColumnLimit - 1)
+                {
+                    return;
+                }
+                if (willShowPageIndex == pageTotalNum - 1 && moveColIndex == lastPageLastShowingColIndex)
+                {
+                    return;
+                }
+            }
+            #endregion
             if (IsAllOutHoriPanel(cellX))
             {
                 for (int hangIndex = 0; hangIndex < rowLimit; hangIndex++)
@@ -574,7 +633,7 @@ public class EquidistancePageRecycle
                     cellGo = cellGoList[cellIndex];
                     cellX = cellGo.transform.localPosition.x + intMoveDir * lineLimit * cellSize;
 
-                    //dataIndex = GetDataIndex(willShowPage, hangIndex, );
+                    //dataIndex = GetDataIndex(willShowPageIndex, hangIndex, );
                     //onUpdateItem(cellGo, dataIndex);
 
 
@@ -630,13 +689,18 @@ public class EquidistancePageRecycle
     #endregion
     #region 拖动限制
     /// <summary>
-    /// 触发sv翻页的最短距离
+    /// 限制1：翻页的最短距离限制
     /// </summary>
     private int minDragMoveDistance = 0;
     /// <summary>
-    /// 是否首尾限制（即首页再往左不能翻到末页，末页往右不能翻到左）
+    /// 限制2：首尾翻页限制（水平：首页再往右翻不能翻到末页，末页往左不能翻到左）
     /// </summary>
     private bool IsNeedFirstLastLimit = true;
+    /// <summary>
+    /// 限制3：首尾翻页预设循环限制（首尾页翻动，是否中断预设循环移动）
+    /// 【必须先开启首尾翻页限制 IsNeedFirstLastLimit ,该限制才生效】
+    /// </summary>
+    private bool IsNeedFirstLastLimitRecycle = true;
     #endregion
     private void RegisterEvent()
     {
@@ -678,6 +742,7 @@ public class EquidistancePageRecycle
         intFinishedSvDragDir = mFinisedSvDragDir == DragmoveDir.Left ? 1 : mFinisedSvDragDir == DragmoveDir.Right ? -1 : 0;
         //Debug.LogError("Drag:" + mFinisedSvDragDir);
 
+        #region 跳转页下标,页位置计算
         var pageNum = 0;
         var goToNextPageDistance = pageColumnLimit * cellSize;
         var offsetDistance = Mathf.Abs((int)(mPanel.clipOffset.x - panelStartOffset));
@@ -686,31 +751,48 @@ public class EquidistancePageRecycle
             pageNum = (offsetDistance / goToNextPageDistance) + 1;
             pageNum = offsetDistance >= goToNextPageDistance + goToNextPageDistance / 2 ? pageNum - 1 : pageNum;
         }
+
         var isChange = 0;
         var dragDistance = Mathf.Abs(dragOffset);
 
-        if (dragDistance >= minDragMoveDistance)//拖动最小距离限制
+        if (dragDistance >= minDragMoveDistance)// 限制1：翻页的最短距离限制
         {
             if (mFinisedSvDragDir == DragmoveDir.Left)
             {
-                curPageIndex += pageNum;
-                isChange = 1;
+                if (IsNeedFirstLastLimit && curPageIndex == pageTotalNum - 1)//限制2：首尾翻页限制
+                {
+                    Extensions.LogAttentionTip(string.Format("第{0}页，不支持左拖翻页", curPageIndex));
+                }
+                else
+                {
+                    curPageIndex += pageNum;
+                    isChange = 1;
+                }
             }
             if (mFinisedSvDragDir == DragmoveDir.Right)
             {
-                curPageIndex -= pageNum;
-                isChange = 1;
+                if (IsNeedFirstLastLimit && curPageIndex == 0)//限制2：首尾翻页限制
+                {
+                    Extensions.LogAttentionTip(string.Format("第{0}页，不支持右拖翻页", curPageIndex));
+                }
+                else
+                {
+                    curPageIndex -= pageNum;
+                    isChange = 1;
+                }
+
             }
         }
         else
         {
-            Debug.LogError(string.Format("拖动距离{0}太短，不足以翻页", dragDistance));
+            Extensions.LogAttentionTip(string.Format("拖动距离{0}太短，不足以翻页", dragDistance));
         }
+
 
         var finalmoveTo = curMoveTo - pageNum * isChange * intFinishedSvDragDir * pageColumnLimit * cellSize;
         SpringPanel.Begin(mPanel.gameObject, new Vector3(finalmoveTo, 0, 0), 8f);
         curMoveTo = finalmoveTo;
-
+        #endregion
         //移动方向
         mFinisedSvMoveDir = mPanel.transform.localPosition.x - finalmoveTo > 0 ? DragmoveDir.Left : mPanel.transform.localPosition.x - finalmoveTo < 0 ? DragmoveDir.Right : DragmoveDir.None;
         intFinishedSvMoveDir = mFinisedSvMoveDir == DragmoveDir.Left ? 1 : mFinisedSvMoveDir == DragmoveDir.Right ? -1 : 0;
@@ -750,5 +832,14 @@ public static class Extensions
     {
         float y = cell.transform.localPosition.y;
         cell.transform.localPosition = new Vector3(x, y, 0);
+    }
+
+    public static bool IsShowLog = false;
+    public static void LogAttentionTip(object message)
+    {
+        if (IsShowLog)
+        {
+            Debug.LogError(message);
+        }
     }
 }

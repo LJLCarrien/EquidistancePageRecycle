@@ -11,6 +11,9 @@ public class EquidistancePageRecycle
 
     #region 分页数据
 
+    private int curPageIndex = 0;
+    private int willShowPage;
+
     /// <summary>
     /// 每页数据行列数(水平为列，垂直为行)
     /// </summary>
@@ -63,6 +66,14 @@ public class EquidistancePageRecycle
     #endregion
 
     #region 界面显示
+    /// <summary>
+    /// 界面显示的cell首列下标
+    /// </summary>
+    private int curFirstColIndex = 0;
+    /// <summary>
+    /// 界面显示的cell末列下标
+    /// </summary>
+    private int curLastColIndex = 0;
 
     /// <summary>
     //界面容许完全显示的最大列
@@ -124,6 +135,12 @@ public class EquidistancePageRecycle
         }
     }
 
+    /// <summary>
+    /// 生成的所有cell List
+    /// </summary>
+    private List<GameObject> cellGoList;
+
+
     #endregion
 
     #region 数据
@@ -160,7 +177,10 @@ public class EquidistancePageRecycle
         extraShowNum = extraShownum;
         InitNeed();
     }
-
+    void OnDestory()
+    {
+        RemoveEvent();
+    }
     private void InitNeed()
     {
         if (IsSvNull()) return;
@@ -186,10 +206,104 @@ public class EquidistancePageRecycle
 
 
     }
-    void OnDestory()
+    /// <summary>
+    /// 初始化显示行列数
+    /// </summary>
+    private void InitPanelColRow()
     {
-        RemoveEvent();
+        if (IsPanelNull()) return;
+
+        float cellX, cellY;
+        int curHang = 0, curLie = 0;
+        if (pageColumnLimit == 0) return;
+
+        if (mMovement == UIScrollView.Movement.Horizontal)
+        {
+            //Debug.LogError("-----------X-----------");
+            cellX = PanelCellLeft;
+            while (IsAllInHoriPanel(cellX))
+            {
+                //cell的左边
+                if (cellX - halfCellSize <= mPanelRightPos)
+                {
+                    curLie++;
+                    mPanelColumnLimit = curLie;
+                }
+                cellX = PanelCellLeft + curLie * cellSize;
+                //Debug.LogError(cellX);
+            }
+            //Debug.LogError("-----------Y-----------");
+
+            cellY = PanelCellTop;
+            while (IsAllInVerPanel(cellY))
+            {
+                //cell的上边
+                if (cellY - halfCellSize >= mPanelDownPos)
+                {
+                    curHang++;
+                    mPanelRowLimit = curHang;
+                }
+                cellY = PanelCellTop - curHang * cellSize;
+                //Debug.LogError(cellY);
+            }
+        }
+        if (mMovement == UIScrollView.Movement.Vertical)
+        {
+            //todo:
+        }
+        PanelMaxShowCount = mPanelRowLimit * mPanelColumnLimit;
+        pageDataTotalCount = mPanelRowLimit * pageColumnLimit;
+
+        cellGoList = new List<GameObject>(PanelMaxShowCount);
+
+
+        //Debug.LogError("-----------Result-----------");
+        //Debug.LogError(mPanelColumnLimit);
+        //Debug.LogError(mPanelRowLimit);
+        DebugLogAllInfo();
     }
+
+    private void DebugLogAllInfo()
+    {
+        var info = string.Format("界面完全显示行：{0}\n,界面完全显示列：{1}\n,界面完全显示总数：{2}\n\n", mPanelRowLimit, mPanelColumnLimit, PanelMaxShowCount);
+        var info1 = string.Format("实际生成行总数：{0}\n,实际生成列总数：{1}\n,实际生成总数：{2}\n\n", mPanelInitRowLimit, mPanelInitColumnLimit, mPanelInitRowLimit * mPanelInitColumnLimit);
+        var info2 = string.Format("数据总数：{0}\n,数据每页显示列数：{1}\n,翻页总页数：{2}\n,翻页总列数：{3}\n", DataCount, pageColumnLimit, pageTotalNum, pageTotalColumn);
+        Debug.LogError(info + info1 + info2);
+    }
+    public void InitCell()
+    {
+        float cellX, cellY;
+        GameObject go;
+        Transform tf;
+        int rowLimit = mMovement == UIScrollView.Movement.Vertical ? mPanelRowLimit + extraShowNum : mPanelRowLimit;
+        int lineLimit = mMovement == UIScrollView.Movement.Horizontal ? mPanelColumnLimit + extraShowNum : mPanelColumnLimit;
+        int cellIndex, dataIndex = 0;
+
+        curPageIndex = (int)mPanel.clipOffset.x / pageColumnLimit * cellSize;
+        for (int curHang = 0; curHang < rowLimit; curHang++)
+        {
+            for (int curLine = 0; curLine < lineLimit; curLine++)
+            {
+
+                cellX = PanelCellLeft + curLine * cellSize;
+                cellY = PanelCellTop - curHang * cellSize;
+
+                go = onLoadItem();
+                cellGoList.Add(go);
+
+                tf = go.transform;
+                tf.SetParent(cellParent.transform);
+                tf.localScale = Vector3.one;
+                tf.localPosition = new Vector3(cellX, cellY, 0);
+                //Debug.LogError(string.Format("{0},{1}", cellX, cellY));
+
+                //todo:
+                onUpdateItem(go, curLine);
+
+            }
+        }
+    }
+ 
 
 
 
@@ -336,109 +450,8 @@ public class EquidistancePageRecycle
     #endregion
 
 
-    /// <summary>
-    /// 生成的所有cell
-    /// </summary>
-    private List<GameObject> cellGoList;
 
-
-    /// <summary>
-    /// 初始化显示行列数
-    /// </summary>
-    private void InitPanelColRow()
-    {
-        if (IsPanelNull()) return;
-
-        float cellX, cellY;
-        int curHang = 0, curLie = 0;
-        if (pageColumnLimit == 0) return;
-
-        if (mMovement == UIScrollView.Movement.Horizontal)
-        {
-            //Debug.LogError("-----------X-----------");
-            cellX = PanelCellLeft;
-            while (IsAllInHoriPanel(cellX))
-            {
-                //cell的左边
-                if (cellX - halfCellSize <= mPanelRightPos)
-                {
-                    curLie++;
-                    mPanelColumnLimit = curLie;
-                }
-                cellX = PanelCellLeft + curLie * cellSize;
-                //Debug.LogError(cellX);
-            }
-            //Debug.LogError("-----------Y-----------");
-
-            cellY = PanelCellTop;
-            while (IsAllInVerPanel(cellY))
-            {
-                //cell的上边
-                if (cellY - halfCellSize >= mPanelDownPos)
-                {
-                    curHang++;
-                    mPanelRowLimit = curHang;
-                }
-                cellY = PanelCellTop - curHang * cellSize;
-                //Debug.LogError(cellY);
-            }
-        }
-        if (mMovement == UIScrollView.Movement.Vertical)
-        {
-            //todo:
-        }
-        PanelMaxShowCount = mPanelRowLimit * mPanelColumnLimit;
-        pageDataTotalCount = mPanelRowLimit * pageColumnLimit;
-
-        cellGoList = new List<GameObject>(PanelMaxShowCount);
-
-
-        //Debug.LogError("-----------Result-----------");
-        //Debug.LogError(mPanelColumnLimit);
-        //Debug.LogError(mPanelRowLimit);
-        DebugLogAllInfo();
-    }
-
-    private void DebugLogAllInfo()
-    {
-        var info = string.Format("界面完全显示行：{0}\n,界面完全显示列：{1}\n,界面完全显示总数：{2}\n\n", mPanelRowLimit, mPanelColumnLimit, PanelMaxShowCount);
-        var info1 = string.Format("实际生成行总数：{0}\n,实际生成列总数：{1}\n,实际生成总数：{2}\n\n", mPanelInitRowLimit, mPanelInitColumnLimit, mPanelInitRowLimit * mPanelInitColumnLimit);
-        var info2 = string.Format("数据总数：{0}\n,数据每页显示列数：{1}\n,翻页总页数：{2}\n,翻页总列数：{3}\n", DataCount, pageColumnLimit, pageTotalNum, pageTotalColumn);
-        Debug.LogError(info + info1 + info2);
-    }
-    public void InitCell()
-    {
-        float cellX, cellY;
-        GameObject go;
-        Transform tf;
-        int rowLimit = mMovement == UIScrollView.Movement.Vertical ? mPanelRowLimit + extraShowNum : mPanelRowLimit;
-        int lineLimit = mMovement == UIScrollView.Movement.Horizontal ? mPanelColumnLimit + extraShowNum : mPanelColumnLimit;
-        int cellIndex, dataIndex = 0;
-
-        curPageIndex = (int)mPanel.clipOffset.x / pageColumnLimit * cellSize;
-        for (int curHang = 0; curHang < rowLimit; curHang++)
-        {
-            for (int curLine = 0; curLine < lineLimit; curLine++)
-            {
-
-                cellX = PanelCellLeft + curLine * cellSize;
-                cellY = PanelCellTop - curHang * cellSize;
-
-                go = onLoadItem();
-                cellGoList.Add(go);
-
-                tf = go.transform;
-                tf.SetParent(cellParent.transform);
-                tf.localScale = Vector3.one;
-                tf.localPosition = new Vector3(cellX, cellY, 0);
-                //Debug.LogError(string.Format("{0},{1}", cellX, cellY));
-
-                //todo:
-                onUpdateItem(go, curLine);
-
-            }
-        }
-    }
+  
     #region 帮助
     /// <summary>
     /// 输入翻页的行列下标，获取cellIndex
@@ -485,11 +498,7 @@ public class EquidistancePageRecycle
         return dIndex;
     }
     #endregion
-    /// <summary>
-    /// 界面显示的cell首列下标
-    /// </summary>
-    private int curFirstColIndex = 0;
-    private int curLastColIndex = 0;
+
 
 
     private enum DragmoveDir
@@ -502,7 +511,6 @@ public class EquidistancePageRecycle
     }
 
 
-    private int willShowPage;
     /// <summary>
     /// 检测并移动
     /// </summary>
@@ -514,7 +522,7 @@ public class EquidistancePageRecycle
         int cellIndex = 0, moveColIndex, dataIndex, intMoveDir;
 
         GameObject cellGo;
-     
+
         DragmoveDir moveDir;
         if (mMovement == UIScrollView.Movement.Horizontal)
         {
@@ -598,42 +606,16 @@ public class EquidistancePageRecycle
 
     #region  事件
 
-    private float panelStartOffset;
-    private void RegisterEvent()
-    {
-        if (mPanel != null) mPanel.onClipMove += OnClipMove;
-        if (mScrollView != null)
-        {
-            mScrollView.onStoppedMoving += OnStoppedMoving;
-            mScrollView.onDragStarted += OnDragStarted;
-            mScrollView.onMomentumMove += onMomentumMove;
-            mScrollView.onDragFinished += OnDragFinished;
-            //    mScrollView.onScrollWheel += OnScrollWheel;
-            //}
-        }
-    }
-    private void RemoveEvent()
-    {
-        if (mPanel != null) mPanel.onClipMove -= OnClipMove;
-        if (mScrollView != null)
-        {
-            mScrollView.onStoppedMoving -= OnStoppedMoving;
-            mScrollView.onDragStarted -= OnDragStarted;
-            mScrollView.onMomentumMove -= onMomentumMove;
-            mScrollView.onDragFinished -= OnDragFinished;
-            //    mScrollView.onScrollWheel -= OnScrollWheel;
-            //}
-        }
-    }
-    private void onMomentumMove()
-    {
-        //DebugIsDraging();
-    }
+    #region 拖动数据变量
+    /// <summary>
+    /// 当前panel移动到的位置（水平:x）
+    /// </summary>
+    private float curMoveTo = 0;
+    /// <summary>
+    /// 触发sv翻页的最短距离
+    /// </summary>
+    private int minDragMoveDistance = 0;
 
-    private void DebugIsDraging()
-    {
-        //Debug.LogError(mScrollView.isDragging);
-    }
 
     /// <summary>
     /// 拖动结束时，不管往哪边拖动，最后sv真正移动的方向
@@ -647,6 +629,40 @@ public class EquidistancePageRecycle
     /// </summary>
     private DragmoveDir mFinisedSvDragDir = DragmoveDir.None;
     private int intFinishedSvDragDir = 0;
+
+    #endregion
+    private void RegisterEvent()
+    {
+        if (mPanel != null) mPanel.onClipMove += OnClipMove;
+        if (mScrollView != null)
+        {
+            mScrollView.onDragStarted += OnDragStarted;
+            mScrollView.onDragFinished += OnDragFinished;
+            mScrollView.onMomentumMove += onMomentumMove;
+            mScrollView.onStoppedMoving += OnStoppedMoving;
+            //    mScrollView.onScrollWheel += OnScrollWheel;
+        }
+    }
+    private void RemoveEvent()
+    {
+        if (mPanel != null) mPanel.onClipMove -= OnClipMove;
+        if (mScrollView != null)
+        {
+            mScrollView.onDragStarted -= OnDragStarted;
+            mScrollView.onDragFinished -= OnDragFinished;
+            mScrollView.onMomentumMove -= onMomentumMove;
+            mScrollView.onStoppedMoving -= OnStoppedMoving;
+            //    mScrollView.onScrollWheel -= OnScrollWheel;
+        }
+    }
+    private float panelStartOffset;
+
+    private void OnDragStarted()
+    {
+
+        panelStartOffset = mMovement == UIScrollView.Movement.Horizontal ? mPanel.clipOffset.x : mPanel.clipOffset.y;
+    }
+
 
     private void OnDragFinished()
     {
@@ -669,7 +685,7 @@ public class EquidistancePageRecycle
             curPageIndex += pageNum;
             isChange = 1;
         }
-        if (mFinisedSvDragDir == DragmoveDir.Right && curPageIndex > 0)
+        if (mFinisedSvDragDir == DragmoveDir.Right)
         {
             curPageIndex -= pageNum;
             isChange = 1;
@@ -687,18 +703,12 @@ public class EquidistancePageRecycle
         CheckMove();
     }
 
-    private void OnDragStarted()
+
+
+    private void onMomentumMove()
     {
-
-        panelStartOffset = mMovement == UIScrollView.Movement.Horizontal ? mPanel.clipOffset.x : mPanel.clipOffset.y;
+        //DebugIsDraging();
     }
-
-    private int curPageIndex = 0;
-    /// <summary>
-    /// 当前panel移动到的位置（水平:x）
-    /// </summary>
-    private float curMoveTo = 0;
-    private int minDragMoveDistance = 0;
     private void OnStoppedMoving()
     {
 

@@ -18,6 +18,10 @@ public class EquidistancePageRecycle
     /// </summary>
     private int DataCount;
 
+    /// <summary>
+    /// 数据占满一页的排列方式
+    /// </summary>
+    private UIGrid.Arrangement DataArrangeType;
     #region 分页数据
 
     private int curPageIndex = 0;
@@ -215,7 +219,7 @@ public class EquidistancePageRecycle
     #endregion
 
     public EquidistancePageRecycle(UIScrollView sv, int dataCount, int size, int pageColum,
-        OnLoadItem loadItem, OnUpdateItem updateItem,
+        OnLoadItem loadItem, OnUpdateItem updateItem, UIGrid.Arrangement arrangement=UIGrid.Arrangement.Horizontal,
         bool isNeedFirstLastLimit = true, int extraShownum = 1, int minDragCanMoveDistance = 0, bool isNeedFirstLastLimitRecycle = true)
     {
         mScrollView = sv;
@@ -223,13 +227,14 @@ public class EquidistancePageRecycle
         cellSize = size;
         halfCellSize = (float)cellSize / 2;
         pageColumnLimit = pageColum;
+        extraShowNum = extraShownum;
 
         onLoadItem = loadItem;
         onUpdateItem = updateItem;
+        DataArrangeType = arrangement;
 
-        IsNeedFirstLastLimit = isNeedFirstLastLimit;
-        extraShowNum = extraShownum;
         minDragMoveDistance = minDragCanMoveDistance;
+        IsNeedFirstLastLimit = isNeedFirstLastLimit;
         IsNeedFirstLastLimitRecycle = isNeedFirstLastLimitRecycle;
 
         InitNeed();
@@ -360,7 +365,7 @@ public class EquidistancePageRecycle
                 //cell虚拟下标显示
                 cellVirtualIndex = GetCellVirtualIndex(curHang, curLine);
                 //Debug.LogError(string.Format("{0},{1},{2}", curHang, curLine, cellVirtualIndex));
-                dataIndex = GetDataIndexByVirtualIndex(cellVirtualIndex);
+                dataIndex = DataArrangeType == UIGrid.Arrangement.Horizontal ? GetDataIndexByVirtualIndexInHorWay(cellVirtualIndex) : DataArrangeType == UIGrid.Arrangement.Vertical ? GetDataIndexByVirtualIndexInVerWay(cellVirtualIndex) : 0;
                 onUpdateItem(go, cellVirtualIndex, dataIndex);
                 AddCellInfo(cellMoveIndex, cellVirtualIndex, dataIndex);
             }
@@ -580,10 +585,11 @@ public class EquidistancePageRecycle
     }
 
     /// <summary>
-    /// 输入【虚拟下标】，映射出【数据下标】
+    ///(数据水平排列) 输入【虚拟下标】，映射出【数据下标】
+    ///  数据根据每页可显示的总数量，水平排布，先占满一页里的第一行
     /// </summary>
     /// <returns></returns>
-    private int GetDataIndexByVirtualIndex(int virtualIndex)
+    private int GetDataIndexByVirtualIndexInHorWay(int virtualIndex)
     {
         var pageIndex = (virtualIndex / pageColumnLimit) % pageTotalNum;
         //每页的列index（水平：每页页头的列index为0，列尾index为pageColumnLimit-1）
@@ -591,6 +597,22 @@ public class EquidistancePageRecycle
         var hangIndex = virtualIndex / pageTotalColumn;
 
         var dataIndex = pageIndex * pageDataTotalCount + hangIndex * pageColumnLimit + eachPageLineIndex;
+        return dataIndex;
+    }
+
+    /// <summary>
+    /// (数据垂直排列)输入【虚拟下标】，映射出【数据下标】
+    /// 数据根据每页可显示的总数量，垂直排布，先占满一页里的第一列
+    /// </summary>
+    /// <returns></returns>
+    private int GetDataIndexByVirtualIndexInVerWay(int virtualIndex)
+    {
+        var pageIndex = (virtualIndex / pageColumnLimit) % pageTotalNum;
+        //每页的列index（水平：每页页头的列index为0，列尾index为pageColumnLimit-1）
+        var eachPageLineIndex = virtualIndex % pageColumnLimit;
+        var hangIndex = virtualIndex / pageTotalColumn;
+
+        var dataIndex = pageIndex * pageDataTotalCount + eachPageLineIndex * mPanelInitRowLimit + hangIndex;
         return dataIndex;
     }
 
@@ -704,7 +726,7 @@ public class EquidistancePageRecycle
                     //onUpdateItem(cellGo, dataIndex);
 
                     cellVirtualIndex = CellInfoDic[cellMoveIndex].cellVirtualIndex + intMoveDir * mPanelInitColumnLimit;
-                    dataIndex = GetDataIndexByVirtualIndex(cellVirtualIndex);
+                    dataIndex = DataArrangeType == UIGrid.Arrangement.Horizontal ? GetDataIndexByVirtualIndexInHorWay(cellVirtualIndex) : DataArrangeType == UIGrid.Arrangement.Vertical ? GetDataIndexByVirtualIndexInVerWay(cellVirtualIndex) : 0;
                     onUpdateItem(cellGo, cellVirtualIndex, dataIndex);
                     UpdateCellInfo(cellMoveIndex, cellVirtualIndex, dataIndex);
 
@@ -818,7 +840,7 @@ public class EquidistancePageRecycle
             pageNum = (offsetDistance / goToNextPageDistance) + 1;
             pageNum = offsetDistance >= goToNextPageDistance + goToNextPageDistance / 2 ? pageNum - 1 : pageNum;
         }
-        
+
         var dragDistance = Mathf.Abs(dragOffset);
         int willGotoPageIndex;
         if (dragDistance >= minDragMoveDistance)// 限制1：翻页的最短距离限制
@@ -853,7 +875,7 @@ public class EquidistancePageRecycle
         //Debug.LogError(curPageIndex);
 
 
-        var finalmoveTo = -1 * curPageIndex  * pageColumnLimit * cellSize;
+        var finalmoveTo = -1 * curPageIndex * pageColumnLimit * cellSize;
         SpringPanel.Begin(mPanel.gameObject, new Vector3(finalmoveTo, 0, 0), 8f);
 
         #endregion
@@ -897,7 +919,9 @@ public static class Extensions
         float y = cell.transform.localPosition.y;
         cell.transform.localPosition = new Vector3(x, y, 0);
     }
-
+    /// <summary>
+    /// 是否显示非bug类提醒
+    /// </summary>
     public static bool IsShowLog = false;
     public static void LogAttentionTip(object message)
     {

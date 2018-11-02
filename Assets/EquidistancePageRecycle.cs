@@ -177,20 +177,22 @@ public class EquidistancePageRecycle
     #endregion
 
     public EquidistancePageRecycle(UIScrollView sv, int dataCount, int size, int pageColum,
-        OnLoadItem loadItem, OnUpdateItem updateItem, bool isNeedFirstLastLimit = true, int extraShownum = 1, int minDragCanMoveDistance = 0)
+        OnLoadItem loadItem, OnUpdateItem updateItem, 
+        bool isNeedFirstLastLimit = true, int extraShownum = 1, int minDragCanMoveDistance = 0, bool isNeedFirstLastLimitRecycle = true)
     {
         mScrollView = sv;
         DataCount = dataCount;
         cellSize = size;
         halfCellSize = (float)cellSize / 2;
-
         pageColumnLimit = pageColum;
+
         onLoadItem = loadItem;
         onUpdateItem = updateItem;
 
-        //IsNeedFirstLastLimit = isNeedFirstLastLimit;
+        IsNeedFirstLastLimit = isNeedFirstLastLimit;
         extraShowNum = extraShownum;
         minDragMoveDistance = minDragCanMoveDistance;
+        IsNeedFirstLastLimitRecycle = isNeedFirstLastLimitRecycle;
 
         InitNeed();
     }

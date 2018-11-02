@@ -49,23 +49,23 @@ public class ViewController : MonoBehaviour
     public int page;
     public int row;
     public int line;
-    [ContextMenu("GetCellIndex1")]
+    [ContextMenu("GetCellVirtualIndex1")]
     private void GetCellIndex1()
     {
-        var cellIndex = mEquidistanceRecycle.GetCellIndex(row, line);
+        var cellIndex = mEquidistanceRecycle.GetCellVirtualIndex(row, line);
         Debug.LogError(cellIndex);
     }
 
-    [ContextMenu("GetCellIndex2")]
+    [ContextMenu("GetCellVirtualIndex2")]
     private void GetCellIndex2()
     {
-        var cellIndex = mEquidistanceRecycle.GetCellIndex(page, row, line);
+        var cellIndex = mEquidistanceRecycle.GetCellVirtualIndex(page, row, line);
         Debug.LogError(cellIndex);
     }
 
     public int realLineIndex;
     public int pageTimes;
-    [ContextMenu("GetCellIndex3")]
+    [ContextMenu("GetMoveLineIndex")]
     private void GetCellIndex3()
     {
         var cellIndex = mEquidistanceRecycle.GetPageRealCellLineIndexByPageTimes(realLineIndex, pageTimes);

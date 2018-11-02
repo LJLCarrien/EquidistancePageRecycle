@@ -160,14 +160,14 @@ public class EquidistancePageRecycle
     #region 委托
 
     public delegate GameObject OnLoadItem();
-    public delegate void OnUpdateItem(GameObject go, int cellVirtualIndex,int dataIndex);
+    public delegate void OnUpdateItem(GameObject go, int cellVirtualIndex, int dataIndex);
 
     private OnLoadItem onLoadItem;
     private OnUpdateItem onUpdateItem;
 
     #endregion
 
-    #region  cell数据
+    #region  cell数据管理
 
     private class CellInfo
     {
@@ -210,7 +210,7 @@ public class EquidistancePageRecycle
 
     private UIScrollView.Movement mMovement;
     private GameObject cellParent;
-    private GameObject cellPool;
+    //private GameObject cellPool;
     private Bounds mPanelBounds;
     #endregion
 
@@ -234,9 +234,13 @@ public class EquidistancePageRecycle
 
         InitNeed();
     }
-    void OnDestory()
+    public void DestoryPageRecycle()
     {
         RemoveEvent();
+
+        cellGoList.Clear();
+        CellInfoDic.Clear();
+
     }
     private void InitNeed()
     {
@@ -255,9 +259,9 @@ public class EquidistancePageRecycle
         cellParent = NGUITools.AddChild(mScrollView.gameObject);
         cellParent.name = "EquidistancePageRecycle";
 
-        cellPool = NGUITools.AddChild(mScrollView.gameObject);
-        cellPool.name = "EquidistancePagePool";
-        cellPool.gameObject.SetActive(false);
+        //cellPool = NGUITools.AddChild(mScrollView.gameObject);
+        //cellPool.name = "EquidistancePagePool";
+        //cellPool.gameObject.SetActive(false);
 
         InitPanelColRow();
 

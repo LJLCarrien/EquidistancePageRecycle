@@ -36,6 +36,10 @@ public class ViewController : MonoBehaviour
         //ctrler.UpdateColor((dataindex / mEquidistanceRecycle.pageDataTotalCount)%2 == 0 ? Color.black : Color.red);
     }
 
+    void onDestory()
+    {
+        mEquidistanceRecycle.DestoryPageRecycle();
+    }
 
 
     private Dictionary<GameObject, CellController> cellCtrlerDic;

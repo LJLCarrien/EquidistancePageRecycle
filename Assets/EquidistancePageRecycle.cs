@@ -167,6 +167,45 @@ public class EquidistancePageRecycle
 
     #endregion
 
+    #region  cell数据
+
+    private class CellInfo
+    {
+
+        public int cellIndex;
+        public int cellVirtualIndex;
+        public int dataIndex;
+
+        public CellInfo(int cIndex, int cVIndex, int dIndex)
+        {
+            cellIndex = cIndex;
+            cellVirtualIndex = cVIndex;
+            dataIndex = dIndex;
+        }
+    }
+    Dictionary<int, CellInfo> CellInfoDic = new Dictionary<int, CellInfo>();
+    private void AddCellInfo(int cIndex, int cVIndex, int dIndex)
+    {
+        if (CellInfoDic.ContainsKey(cIndex))
+        {
+            UpdateCellInfo(cIndex, cVIndex, dIndex);
+            return;
+        }
+        CellInfo info = new CellInfo(cIndex, cVIndex, dIndex);
+        CellInfoDic.Add(cIndex, info);
+    }
+
+    private void UpdateCellInfo(int cIndex, int cVIndex, int dIndex)
+    {
+        CellInfo info;
+        if (!CellInfoDic.TryGetValue(cIndex, out info)) return;
+        //Debug.LogError(string.Format("{0},{1},{2}", info.cellIndex, info.cellVirtualIndex, info.dataIndex));
+        info.cellVirtualIndex = cVIndex;
+        info.dataIndex = dIndex;
+        //Debug.LogError(string.Format("{0},{1},{2}", CellInfoDic[cIndex].cellIndex, CellInfoDic[cIndex].cellVirtualIndex, CellInfoDic[cIndex].dataIndex));
+    }
+    #endregion
+
     private UIScrollView mScrollView;
     private UIPanel mPanel;
 
@@ -177,7 +216,7 @@ public class EquidistancePageRecycle
     #endregion
 
     public EquidistancePageRecycle(UIScrollView sv, int dataCount, int size, int pageColum,
-        OnLoadItem loadItem, OnUpdateItem updateItem, 
+        OnLoadItem loadItem, OnUpdateItem updateItem,
         bool isNeedFirstLastLimit = true, int extraShownum = 1, int minDragCanMoveDistance = 0, bool isNeedFirstLastLimitRecycle = true)
     {
         mScrollView = sv;
@@ -269,9 +308,10 @@ public class EquidistancePageRecycle
         pageDataTotalCount = mPanelRowLimit * pageColumnLimit;
 
         cellGoList = new List<GameObject>(PanelMaxShowCount);
-
         lastPageLastShowingColIndex = GetPageRealCellLineIndexByPageTimes(mPanelInitColumnLimit - 1, pageTotalNum - 1);
         //Debug.LogError("最后页最后列的移动列数据：" + lastPageLastShowingColIndex);
+
+        CellInfoDic = new Dictionary<int, CellInfo>(PanelMaxShowCount);
 
         DebugLogAllInfo();
     }
@@ -290,7 +330,7 @@ public class EquidistancePageRecycle
         Transform tf;
         int rowLimit = mMovement == UIScrollView.Movement.Vertical ? mPanelRowLimit + extraShowNum : mPanelRowLimit;
         int lineLimit = mMovement == UIScrollView.Movement.Horizontal ? mPanelColumnLimit + extraShowNum : mPanelColumnLimit;
-        int cellIndex, dataIndex = 0;
+        int cellIndex, cellVirtualIndex, dataIndex = 0;
 
         curPageIndex = (int)mPanel.clipOffset.x / pageColumnLimit * cellSize;
         for (int curHang = 0; curHang < rowLimit; curHang++)
@@ -310,9 +350,15 @@ public class EquidistancePageRecycle
                 tf.localPosition = new Vector3(cellX, cellY, 0);
                 //Debug.LogError(string.Format("{0},{1}", cellX, cellY));
 
-                //按cell真实循环列下标显示
-                onUpdateItem(go, curLine);
+                ////按cell真实循环列下标显示
+                //onUpdateItem(go, curLine);
 
+                cellIndex = curHang * lineLimit + curLine;
+                //cell虚拟下标显示
+                cellVirtualIndex = GetCellIndex(curHang, curLine);
+                //Debug.LogError(string.Format("{0},{1},{2}", curHang, curLine, cellVirtualIndex));
+                onUpdateItem(go, cellVirtualIndex);
+                AddCellInfo(cellIndex, cellVirtualIndex, 0);
             }
         }
 
@@ -551,7 +597,7 @@ public class EquidistancePageRecycle
         int rowLimit = mMovement == UIScrollView.Movement.Vertical ? mPanelRowLimit + extraShowNum : mPanelRowLimit;
         int lineLimit = mMovement == UIScrollView.Movement.Horizontal ? mPanelColumnLimit + extraShowNum : mPanelColumnLimit;
         if (cellGoList.Count <= lineLimit) return;
-        int cellIndex = 0, moveColIndex, dataIndex, intMoveDir;
+        int cellIndex = 0, moveColIndex, intMoveDir, cellVirtualIndex = 0, dataIndex;
 
         GameObject cellGo;
 
@@ -638,6 +684,9 @@ public class EquidistancePageRecycle
                     //dataIndex = GetDataIndex(willShowPageIndex, hangIndex, );
                     //onUpdateItem(cellGo, dataIndex);
 
+                    cellVirtualIndex = CellInfoDic[cellIndex].cellVirtualIndex + intMoveDir * mPanelInitColumnLimit;
+                    onUpdateItem(cellGo, cellVirtualIndex);
+                    UpdateCellInfo(cellIndex, cellVirtualIndex, 0);
 
                     cellGo.transform.SetLocalX(cellX);
 

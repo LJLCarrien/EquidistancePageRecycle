@@ -22,16 +22,16 @@ public class ViewController : MonoBehaviour
     {
         CellController ctrler;
         if (!cellCtrlerDic.TryGetValue(go, out ctrler)) return;
-        if (dataindex >= maxNum)
-        {
-            ctrler.UpdateLbl("");
+        //if (dataindex >= maxNum)
+        //{
+        //    ctrler.UpdateLbl("");
 
-        }
-        else
-        {
+        //}
+        //else
+        //{
             ctrler.UpdateLbl(dataindex.ToString());
 
-        }
+        //}
         //ctrler.UpdateColor((dataindex / mEquidistanceRecycle.pageDataTotalCount)%2 == 0 ? Color.black : Color.red);
     }
 

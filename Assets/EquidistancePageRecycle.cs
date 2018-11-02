@@ -739,10 +739,6 @@ public class EquidistancePageRecycle
     /// </summary>
     private float panelStartOffset;
 
-    /// <summary>
-    /// 当前panel移动到的位置（水平:x）
-    /// </summary>
-    private float curMoveTo = 0;
 
     /// <summary>
     /// 拖动结束时，不管往哪边拖动，最后sv真正移动的方向
@@ -822,47 +818,44 @@ public class EquidistancePageRecycle
             pageNum = (offsetDistance / goToNextPageDistance) + 1;
             pageNum = offsetDistance >= goToNextPageDistance + goToNextPageDistance / 2 ? pageNum - 1 : pageNum;
         }
-
-        var isChange = 0;
+        
         var dragDistance = Mathf.Abs(dragOffset);
-
+        int willGotoPageIndex;
         if (dragDistance >= minDragMoveDistance)// 限制1：翻页的最短距离限制
         {
             if (mFinisedSvDragDir == DragmoveDir.Left)
             {
-                if (IsNeedFirstLastLimit && curPageIndex == pageTotalNum - 1)//限制2：首尾翻页限制
+                willGotoPageIndex = curPageIndex + pageNum;
+                if (IsNeedFirstLastLimit && willGotoPageIndex >= pageTotalNum)//限制2：首尾翻页限制
                 {
+                    willGotoPageIndex = pageTotalNum - 1;
                     Extensions.LogAttentionTip(string.Format("第{0}页，不支持左拖翻页", curPageIndex));
                 }
-                else
-                {
-                    curPageIndex += pageNum;
-                    isChange = 1;
-                }
+                curPageIndex = willGotoPageIndex;
             }
             if (mFinisedSvDragDir == DragmoveDir.Right)
             {
-                if (IsNeedFirstLastLimit && curPageIndex == 0)//限制2：首尾翻页限制
+                willGotoPageIndex = curPageIndex - pageNum;
+
+
+                if (IsNeedFirstLastLimit && willGotoPageIndex < 0) //限制2：首尾翻页限制
                 {
+                    willGotoPageIndex = 0;
                     Extensions.LogAttentionTip(string.Format("第{0}页，不支持右拖翻页", curPageIndex));
                 }
-                else
-                {
-                    curPageIndex -= pageNum;
-                    isChange = 1;
-                }
-
+                curPageIndex = willGotoPageIndex;
             }
         }
         else
         {
             Extensions.LogAttentionTip(string.Format("拖动距离{0}太短，不足以翻页", dragDistance));
         }
+        //Debug.LogError(curPageIndex);
 
 
-        var finalmoveTo = curMoveTo - pageNum * isChange * intFinishedSvDragDir * pageColumnLimit * cellSize;
+        var finalmoveTo = -1 * curPageIndex  * pageColumnLimit * cellSize;
         SpringPanel.Begin(mPanel.gameObject, new Vector3(finalmoveTo, 0, 0), 8f);
-        curMoveTo = finalmoveTo;
+
         #endregion
         //移动方向
         mFinisedSvMoveDir = mPanel.transform.localPosition.x - finalmoveTo > 0 ? DragmoveDir.Left : mPanel.transform.localPosition.x - finalmoveTo < 0 ? DragmoveDir.Right : DragmoveDir.None;

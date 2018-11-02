@@ -18,7 +18,7 @@ public class ViewController : MonoBehaviour
         mEquidistanceRecycle.InitCell();
     }
 
-    private void UpdateCell(GameObject go, int dataindex)
+    private void UpdateCell(GameObject go, int cellVirtualIndex, int dataindex)
     {
         CellController ctrler;
         if (!cellCtrlerDic.TryGetValue(go, out ctrler)) return;
@@ -29,7 +29,8 @@ public class ViewController : MonoBehaviour
         //}
         //else
         //{
-            ctrler.UpdateLbl(dataindex.ToString());
+        var text = cellVirtualIndex.ToString().WrapColor("000000FF") + "\n" + dataindex.ToString().WrapColor("B54646FF");
+        ctrler.UpdateLbl(text);
 
         //}
         //ctrler.UpdateColor((dataindex / mEquidistanceRecycle.pageDataTotalCount)%2 == 0 ? Color.black : Color.red);
@@ -71,5 +72,5 @@ public class ViewController : MonoBehaviour
         var cellIndex = mEquidistanceRecycle.GetPageRealCellLineIndexByPageTimes(realLineIndex, pageTimes);
         Debug.LogError(cellIndex);
     }
-    
+
 }

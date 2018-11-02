@@ -160,7 +160,7 @@ public class EquidistancePageRecycle
     #region 委托
 
     public delegate GameObject OnLoadItem();
-    public delegate void OnUpdateItem(GameObject go, int dataIndex);
+    public delegate void OnUpdateItem(GameObject go, int cellVirtualIndex,int dataIndex);
 
     private OnLoadItem onLoadItem;
     private OnUpdateItem onUpdateItem;
@@ -356,8 +356,9 @@ public class EquidistancePageRecycle
                 //cell虚拟下标显示
                 cellVirtualIndex = GetCellVirtualIndex(curHang, curLine);
                 //Debug.LogError(string.Format("{0},{1},{2}", curHang, curLine, cellVirtualIndex));
-                onUpdateItem(go, cellVirtualIndex);
-                AddCellInfo(cellMoveIndex, cellVirtualIndex, 0);
+                dataIndex = GetDataIndexByVirtualIndex(cellVirtualIndex);
+                onUpdateItem(go, cellVirtualIndex, dataIndex);
+                AddCellInfo(cellMoveIndex, cellVirtualIndex, dataIndex);
             }
         }
 
@@ -517,7 +518,7 @@ public class EquidistancePageRecycle
     public int GetCellVirtualIndex(int rowIndex, int cellPageLineIndex)
     {
         //括号：index取余保证不出界
-        var index = (rowIndex % mPanelInitColumnLimit) * pageTotalColumn + (cellPageLineIndex % pageTotalColumn);
+        var index = (rowIndex % mPanelInitRowLimit) * pageTotalColumn + (cellPageLineIndex % pageTotalColumn);
         return index;
     }
 
@@ -574,7 +575,21 @@ public class EquidistancePageRecycle
         return nextPageRealCellLineIndex;
     }
 
-  
+    /// <summary>
+    /// 输入【虚拟下标】，映射出【数据下标】
+    /// </summary>
+    /// <returns></returns>
+    private int GetDataIndexByVirtualIndex(int virtualIndex)
+    {
+        var pageIndex = (virtualIndex / pageColumnLimit) % pageTotalNum;
+        //每页的列index（水平：每页页头的列index为0，列尾index为pageColumnLimit-1）
+        var eachPageLineIndex = virtualIndex % pageColumnLimit;
+        var hangIndex = virtualIndex / pageTotalColumn;
+
+        var dataIndex = pageIndex * pageDataTotalCount + hangIndex * pageColumnLimit + eachPageLineIndex;
+        return dataIndex;
+    }
+
     #endregion
 
 
@@ -685,8 +700,9 @@ public class EquidistancePageRecycle
                     //onUpdateItem(cellGo, dataIndex);
 
                     cellVirtualIndex = CellInfoDic[cellMoveIndex].cellVirtualIndex + intMoveDir * mPanelInitColumnLimit;
-                    onUpdateItem(cellGo, cellVirtualIndex);
-                    UpdateCellInfo(cellMoveIndex, cellVirtualIndex, 0);
+                    dataIndex = GetDataIndexByVirtualIndex(cellVirtualIndex);
+                    onUpdateItem(cellGo, cellVirtualIndex, dataIndex);
+                    UpdateCellInfo(cellMoveIndex, cellVirtualIndex, dataIndex);
 
                     cellGo.transform.SetLocalX(cellX);
 
@@ -892,5 +908,11 @@ public static class Extensions
         {
             Debug.LogError(message);
         }
+    }
+
+    public static string WrapColor(this string text, string colorCode)
+    {
+        text = "[" + colorCode + "]" + text + "[-]";
+        return text;
     }
 }

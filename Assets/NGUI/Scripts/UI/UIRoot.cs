@@ -36,17 +36,19 @@ public class UIRoot : MonoBehaviour
 		FitHeight,
 	}
 
-	/// <summary>
-	/// Type of scaling used by the UIRoot.
-	/// </summary>
+    /// <summary>
+    /// Type of scaling used by the UIRoot.
+    /// UIRoot使用的缩放类型。
+    /// </summary>
 
-	public Scaling scalingStyle = Scaling.Flexible;
+    public Scaling scalingStyle = Scaling.Flexible;
 
-	/// <summary>
-	/// When the UI scaling is constrained, this controls the type of constraint that further fine-tunes how it's scaled.
-	/// </summary>
+    /// <summary>
+    /// When the UI scaling is constrained, this controls the type of constraint that further fine-tunes how it's scaled.
+    /// 当UI缩放受到约束时，它会控制约束类型，进一步微调它的缩放方式。
+    /// </summary>
 
-	public Constraint constraint
+    public Constraint constraint
 	{
 		get
 		{
@@ -60,63 +62,76 @@ public class UIRoot : MonoBehaviour
 		}
 	}
 
-	/// <summary>
-	/// Width of the screen, used when the scaling style is set to Flexible.
-	/// </summary>
+    /// <summary>
+    /// Width of the screen, used when the scaling style is set to Flexible.
+    /// 屏幕宽度，在缩放样式设置为“灵活”时使用。
+    /// </summary>
 
-	public int manualWidth = 1280;
+    public int manualWidth = 1280;
 
-	/// <summary>
-	/// Height of the screen when the scaling style is set to FixedSize or Flexible.
-	/// </summary>
+    /// <summary>
+    /// Height of the screen when the scaling style is set to FixedSize or Flexible.
+    ///屏幕高度, 缩放样式设置为FixedSize或Flexible时使用。
+    /// </summary>
 
-	public int manualHeight = 720;
+    public int manualHeight = 720;
 
-	/// <summary>
-	/// If the screen height goes below this value, it will be as if the scaling style
-	/// is set to FixedSize with manualHeight of this value.
-	/// </summary>
+    /// <summary>
+    /// If the screen height goes below this value, it will be as if the scaling style
+    /// is set to FixedSize with manualHeight of this value.
+    /// 如果屏幕高度低于此值（最小值），则会像缩放样式一样
+    /// 设置为FixedSize，manualHeight等于minimumHeight。
+    /// </summary>
 
-	public int minimumHeight = 320;
+    public int minimumHeight = 320;
 
-	/// <summary>
-	/// If the screen height goes above this value, it will be as if the scaling style
-	/// is set to Fixed Height with manualHeight of this value.
-	/// </summary>
+    /// <summary>
+    /// If the screen height goes above this value, it will be as if the scaling style
+    /// is set to Fixed Height with manualHeight of this value.
+    /// 如果屏幕高度超过此值（最大值），则会像缩放样式一样
+    /// 设置为Fixed Height，manualHeight等于maximumHeight。
+    /// </summary>
 
-	public int maximumHeight = 1536;
+    public int maximumHeight = 1536;
 
-	/// <summary>
-	/// When Constraint is on, controls whether the content must be restricted horizontally to be at least 'manualWidth' wide.
-	/// </summary>
+    /// <summary>
+    /// When Constraint is on, controls whether the content must be restricted horizontally to be at least 'manualWidth' wide.
+    /// 启用“约束”时，控制是否必须将【内容水平限制】为至少为“manualWidth”宽度。
+    /// </summary>
 
-	public bool fitWidth = false;
+    public bool fitWidth = false;
 
-	/// <summary>
-	/// When Constraint is on, controls whether the content must be restricted vertically to be at least 'Manual Height' tall.
-	/// </summary>
+    /// <summary>
+    /// When Constraint is on, controls whether the content must be restricted vertically to be at least 'Manual Height' tall.
+    /// 启用“约束”时，控制是否必须【垂直限制内容】至少“手动高度”高。
+    /// </summary>
 
-	public bool fitHeight = true;
+    public bool fitHeight = true;
 
-	/// <summary>
-	/// Whether the final value will be adjusted by the device's DPI setting.
-	/// Used when the Scaling is set to Pixel-Perfect.
-	/// </summary>
+    /// <summary>
+    /// Whether the final value will be adjusted by the device's DPI setting.
+    /// Used when the Scaling is set to Pixel-Perfect.
+    /// 是否将通过设备的DPI设置调整最终值。
+    /// 当Scaling设置为Pixel-Perfect时使用。
+    /// </summary>
 
-	public bool adjustByDPI = false;
+    public bool adjustByDPI = false;
 
-	/// <summary>
-	/// If set and the game is in portrait mode, the UI will shrink based on the screen's width instead of height.
-	/// Used when the Scaling is set to Pixel-Perfect.
-	/// </summary>
+    /// <summary>
+    /// If set and the game is in portrait mode, the UI will shrink based on the screen's width instead of height.
+    /// Used when the Scaling is set to Pixel-Perfect.
+    /// 如果设置并且游戏处于纵向模式，则UI将根据屏幕的宽度而不是高度缩小。
+    /// 当Scaling设置为Pixel-Perfect时使用。
+    /// </summary>
 
-	public bool shrinkPortraitUI = false;
+    public bool shrinkPortraitUI = false;
 
-	/// <summary>
-	/// Active scaling type, based on platform.
-	/// </summary>
+    /// <summary>
+    /// Active scaling type, based on platform.
+    /// 基于平台的活动缩放类型。
+    /// </summary>
 
-	public Scaling activeScaling
+    public Scaling activeScaling
 	{
 		get
 		{
@@ -132,11 +147,12 @@ public class UIRoot : MonoBehaviour
 		}
 	}
 
-	/// <summary>
-	/// UI Root's active height, based on the size of the screen.
-	/// </summary>
+    /// <summary>
+    /// UI Root's active height, based on the size of the screen.
+    /// UI Root的活动高度，基于屏幕大小。
+    /// </summary>
 
-	public int activeHeight
+    public int activeHeight
 	{
 		get
 		{
@@ -198,11 +214,12 @@ public class UIRoot : MonoBehaviour
 		}
 	}
 
-	/// <summary>
-	/// Pixel size adjustment. Most of the time it's at 1, unless the scaling style is set to FixedSize.
-	/// </summary>
+    /// <summary>
+    /// Pixel size adjustment. Most of the time it's at 1, unless the scaling style is set to FixedSize.
+    /// 像素大小调整。 除非缩放样式设置为FixedSize，否则大多数情况下它处于1。
+    /// </summary>
 
-	public float pixelSizeAdjustment
+    public float pixelSizeAdjustment
 	{
 		get
 		{
@@ -211,21 +228,23 @@ public class UIRoot : MonoBehaviour
 		}
 	}
 
-	/// <summary>
-	/// Helper function that figures out the pixel size adjustment for the specified game object.
-	/// </summary>
+    /// <summary>
+    /// Helper function that figures out the pixel size adjustment for the specified game object.
+    /// 辅助函数，用于指出指定游戏对象的像素大小调整。
+    /// </summary>
 
-	static public float GetPixelSizeAdjustment (GameObject go)
+    static public float GetPixelSizeAdjustment (GameObject go)
 	{
 		UIRoot root = NGUITools.FindInParents<UIRoot>(go);
 		return (root != null) ? root.pixelSizeAdjustment : 1f;
 	}
 
-	/// <summary>
-	/// Calculate the pixel size adjustment at the specified screen height value.
-	/// </summary>
+    /// <summary>
+    /// Calculate the pixel size adjustment at the specified screen height value.
+    /// 计算指定屏幕高度值的像素大小调整。
+    /// </summary>
 
-	public float GetPixelSizeAdjustment (int height)
+    public float GetPixelSizeAdjustment (int height)
 	{
 		height = Mathf.Max(2, height);
 
@@ -266,11 +285,12 @@ public class UIRoot : MonoBehaviour
 		UpdateScale();
 	}
 
-	/// <summary>
-	/// Immediately update the root's scale. Call this function after changing the min/max/manual height values.
-	/// </summary>
+    /// <summary>
+    /// Immediately update the root's scale. Call this function after changing the min/max/manual height values.
+    /// 立即更新根的比例。 更改最小/最大/手动高度值后调用此功能。
+    /// </summary>
 
-	public void UpdateScale (bool updateAnchors = true)
+    public void UpdateScale (bool updateAnchors = true)
 	{
 		if (mTrans != null)
 		{
@@ -293,11 +313,12 @@ public class UIRoot : MonoBehaviour
 		}
 	}
 
-	/// <summary>
-	/// Broadcast the specified message to the entire UI.
-	/// </summary>
+    /// <summary>
+    /// Broadcast the specified message to the entire UI.
+    /// 将指定的消息广播到整个UI。
+    /// </summary>
 
-	static public void Broadcast (string funcName)
+    static public void Broadcast (string funcName)
 	{
 #if UNITY_EDITOR
 		if (Application.isPlaying)
@@ -311,11 +332,12 @@ public class UIRoot : MonoBehaviour
 		}
 	}
 
-	/// <summary>
-	/// Broadcast the specified message to the entire UI.
-	/// </summary>
+    /// <summary>
+    /// Broadcast the specified message to the entire UI.
+    /// 将指定的消息广播到整个UI。
+    /// </summary>
 
-	static public void Broadcast (string funcName, object param)
+    static public void Broadcast (string funcName, object param)
 	{
 		if (param == null)
 		{

@@ -330,11 +330,12 @@ public abstract class UIRect : MonoBehaviour
 		}
 	}
 
-	/// <summary>
-	/// Sets the local 'changed' flag, indicating that some parent value(s) are now be different, such as alpha for example.
-	/// </summary>
+    /// <summary>
+    /// Sets the local 'changed' flag, indicating that some parent value(s) are now be different, such as alpha for example.
+    /// 设置本地“已更改”标志，指示某些父值现在不同，例如alpha。
+    /// </summary>
 
-	public virtual void Invalidate (bool includeChildren)
+    public virtual void Invalidate (bool includeChildren)
 	{
 		mChanged = true;
 		if (includeChildren)

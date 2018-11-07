@@ -219,7 +219,7 @@ public class EquidistancePageRecycle
     #endregion
 
     public EquidistancePageRecycle(UIScrollView sv, int dataCount, int size, int pageColum,
-        OnLoadItem loadItem, OnUpdateItem updateItem, UIGrid.Arrangement arrangement=UIGrid.Arrangement.Horizontal,
+        OnLoadItem loadItem, OnUpdateItem updateItem, UIGrid.Arrangement arrangement = UIGrid.Arrangement.Horizontal,
         bool isNeedFirstLastLimit = true, int extraShownum = 1, int minDragCanMoveDistance = 0, bool isNeedFirstLastLimitRecycle = true)
     {
         mScrollView = sv;
@@ -359,7 +359,7 @@ public class EquidistancePageRecycle
                 //Debug.LogError(string.Format("{0},{1}", cellX, cellY));
 
                 ////按cell真实循环列下标显示
-                //onUpdateItem(go, curLine);
+                //onUpdateItem(go, curLine,-1);
 
                 cellMoveIndex = curHang * lineLimit + curLine;
                 //cell虚拟下标显示
@@ -688,31 +688,32 @@ public class EquidistancePageRecycle
             {
                 willShowPageIndex = curPageIndex + intMoveDir * pageNum;
                 //Debug.LogError(willShowPageIndex);
+                willShowPageIndex = willShowPageIndex < 0 ? 0 : willShowPageIndex;
             }
             //Debug.LogError(curPageIndex);
             #region  限制3：首尾翻页预设循环限制
-            if (IsNeedFirstLastLimit && IsNeedFirstLastLimitRecycle)
-            {
-                if (willShowPageIndex < 0)
-                {
-                    Extensions.LogAttentionTip("首页右拖翻上一页，预设不循环");
-                    return;
-                }
-                if (willShowPageIndex > pageTotalNum - 1)
-                {
-                    Extensions.LogAttentionTip("尾页左拖翻下一页，预设不循环");
-                    return;
-                }
-                //以下两个return：用于处理首尾翻页限制，但还是会看到额外生成那一列的情况
-                if (willShowPageIndex == 0 && moveColIndex == mPanelInitColumnLimit - 1)
-                {
-                    return;
-                }
-                if (willShowPageIndex == pageTotalNum - 1 && moveColIndex == lastPageLastShowingColIndex)
-                {
-                    return;
-                }
-            }
+            //if (IsNeedFirstLastLimit && IsNeedFirstLastLimitRecycle)
+            //{
+            //    if (curFirstColIndex == 0 && willShowPageIndex < 0)
+            //    {
+            //        Extensions.LogAttentionTip("首页右拖翻上一页，预设不循环");
+            //        return;
+            //    }
+            //    if (willShowPageIndex > pageTotalNum - 1)
+            //    {
+            //        Extensions.LogAttentionTip("尾页左拖翻下一页，预设不循环");
+            //        return;
+            //    }
+            //    ////以下两个return：用于处理首尾翻页限制，但还是会看到额外生成那一列的情况
+            //    //if (willShowPageIndex == 0 && moveColIndex == mPanelInitColumnLimit - 1)
+            //    //{
+            //    //    return;
+            //    //}
+            //    //if (willShowPageIndex == pageTotalNum - 1 && moveColIndex == lastPageLastShowingColIndex)
+            //    //{
+            //    //    return;
+            //    //}
+            //}
             #endregion
             if (IsAllOutHoriPanel(cellX))
             {
@@ -721,10 +722,7 @@ public class EquidistancePageRecycle
                     cellMoveIndex = hangIndex * lineLimit + moveColIndex;
                     cellGo = cellGoList[cellMoveIndex];
                     cellX = cellGo.transform.localPosition.x + intMoveDir * lineLimit * cellSize;
-
-                    //dataIndex = GetDataIndex(willShowPageIndex, hangIndex, );
-                    //onUpdateItem(cellGo, dataIndex);
-
+                    
                     cellVirtualIndex = CellInfoDic[cellMoveIndex].cellVirtualIndex + intMoveDir * mPanelInitColumnLimit;
                     dataIndex = DataArrangeType == UIGrid.Arrangement.Horizontal ? GetDataIndexByVirtualIndexInHorWay(cellVirtualIndex) : DataArrangeType == UIGrid.Arrangement.Vertical ? GetDataIndexByVirtualIndexInVerWay(cellVirtualIndex) : 0;
                     onUpdateItem(cellGo, cellVirtualIndex, dataIndex);
@@ -850,8 +848,8 @@ public class EquidistancePageRecycle
                 willGotoPageIndex = curPageIndex + pageNum;
                 if (IsNeedFirstLastLimit && willGotoPageIndex >= pageTotalNum)//限制2：首尾翻页限制
                 {
+                    Extensions.LogAttentionTip(string.Format("当前第{0}页，不支持左拖翻页到{1}", curPageIndex, willGotoPageIndex));
                     willGotoPageIndex = pageTotalNum - 1;
-                    Extensions.LogAttentionTip(string.Format("第{0}页，不支持左拖翻页", curPageIndex));
                 }
                 curPageIndex = willGotoPageIndex;
             }
@@ -862,8 +860,8 @@ public class EquidistancePageRecycle
 
                 if (IsNeedFirstLastLimit && willGotoPageIndex < 0) //限制2：首尾翻页限制
                 {
+                    Extensions.LogAttentionTip(string.Format("当前第{0}页，不支持右拖翻页{1}", curPageIndex, willGotoPageIndex));
                     willGotoPageIndex = 0;
-                    Extensions.LogAttentionTip(string.Format("第{0}页，不支持右拖翻页", curPageIndex));
                 }
                 curPageIndex = willGotoPageIndex;
             }
@@ -922,7 +920,7 @@ public static class Extensions
     /// <summary>
     /// 是否显示非bug类提醒
     /// </summary>
-    public static bool IsShowLog = false;
+    public static bool IsShowLog = true;
     public static void LogAttentionTip(object message)
     {
         if (IsShowLog)
